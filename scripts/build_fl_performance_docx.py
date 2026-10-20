@@ -63,7 +63,7 @@ def add_header_footer(doc):
     header = section.header
     hp = header.paragraphs[0]
     hp.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    hrun = hp.add_run("CSE499B Senior Design Project | Reinforcement & Federated Learning Performance")
+    hrun = hp.add_run("CSE 499 Senior Design Project | Reinforcement & Federated Learning Performance")
     hrun.font.name = 'Calibri'
     hrun.font.size = Pt(8.5)
     hrun.font.color.rgb = COLOR_MUTED
@@ -315,7 +315,7 @@ def generate_report():
     # 4. Integrated RL + FL Pipeline & Continual Learning Synergy
     # ---------------------------------------------------------
     add_heading_1(doc, "4. Integrated RL + FL Pipeline & Continual Learning Synergy")
-    add_body_p(doc, "The primary architectural breakthrough of CSE499B is the operational coupling of Reinforcement Learning and Federated Learning into a self-improving security ecosystem. The RL->FL workflow operates via three continuous stages:")
+    add_body_p(doc, "The primary architectural breakthrough of CSE 499 is the operational coupling of Reinforcement Learning and Federated Learning into a self-improving security ecosystem. The RL->FL workflow operates via three continuous stages:")
     
     add_bullet(doc, "Each edge node runs a local Dueling DQN agent. When incoming packet flows arrive, the agent selects defense actions while populating a local Experience Replay Buffer (capacity: 10,000 transitions).", "Stage 1 — Local RL Adaptation: ")
     add_bullet(doc, "Flows with prediction confidence < 0.70 or where the Local RL agent disagrees with the Global FL consensus are flagged by the RLFLSyncManager as novel attack candidates.", "Stage 2 — Novelty & Disagreement Flagging: ")

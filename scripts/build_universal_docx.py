@@ -26,12 +26,12 @@ def code(t):
     r.font.name = 'Consolas'; r.font.size = Pt(9.5)
     r.font.color.rgb = RGBColor(0x1F, 0x49, 0x7D)
 
-doc.add_heading('SDN-IoT IDS — Universal Guide (FL + RL Combined)', 0)
+doc.add_heading('Privacy-Preserving Federated and Reinforcement Learning-Based Intrusion Detection System for IoT Devices', 0)
 sub = doc.add_paragraph('Latest One (FL+RL) package — how Federated Learning and Reinforcement Learning were executed, combined, and how to improve the system further.')
 sub.runs[0].italic = True
 
 h1('1. What this package is')
-p('Folder: E:\\CSE499B\\Latest One(FL+RL)')
+p('Folder: project root (P.R.I.S.M checkout)')
 bullet('IDS_FL_RL_Combined.ipynb — full pipeline (Sections 1–8 training identical to IDS_Advanced_GPU; Sections 9–10 = real FL + 5 RL agents)')
 bullet('Saved model/ — TM, DL, RL, FL checkpoints + scaler / label encoder / feature columns')
 bullet('federated/ — 1 Flower server + 3 clients (real multi-process FedAvg)')
@@ -73,7 +73,7 @@ p('That dual-path inference is the UI proof that FL and RL are live systems, not
 h1('3. How to execute everything')
 h2('3.1 One-time setup')
 num('Open IDS_FL_RL_Combined.ipynb in the Latest One(FL+RL) folder')
-num('Ensure ASEADOS_SDN_IoT.csv is reachable (parent E:\\CSE499B\\ or project root)')
+num('Ensure ASEADOS_SDN_IoT.csv is reachable in the project root or its parent folder')
 num('Run Section 1 install cell (flwr, gymnasium optional, flask, torch CUDA build, etc.)')
 
 h2('3.2 Train supervised models')
@@ -160,7 +160,7 @@ bullet('UI says best model missing → run Sections 5 + 11 so xgboost.joblib exi
 bullet('FL clients hang → start server first; FL_CLIENTS must be 3; firewall must allow 8080')
 bullet('RL box shows “not loaded” → run Section 10 then restart ids_server.py')
 bullet('CUDA false → install CUDA PyTorch wheel matching your GPU')
-bullet('Dataset not found → place ASEADOS_SDN_IoT.csv in E:\\CSE499B\\ or the project folder')
+bullet('Dataset not found → place ASEADOS_SDN_IoT.csv in the project folder or its parent')
 
 doc.save(OUT)
 print('Wrote', OUT)

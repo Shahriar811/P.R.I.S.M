@@ -45,14 +45,12 @@ Sources: [GitHub file limits](https://docs.github.com/en/repositories/working-wi
    initialization unchecked so the remote is empty.
 2. Replace the repository URL below. If Git asks for your identity, use your
    preferred name and GitHub email (or your GitHub-provided noreply email).
-3. Open **Git Bash** and paste this block. The subshell stops at the first failed
+3. Open **Git Bash** in your local project folder and paste this block. The subshell stops at the first failed
    step. All excluded files stay on disk.
 
 ```bash
 (
   set -e
-  cd '/e/CSE499B/Latest One(FL+RL)'
-
   git init -b main
   # Only if Git has no commit identity configured:
   # git config user.name 'Your Name'

@@ -63,7 +63,7 @@ def add_header_footer(doc):
     header = section.header
     hp = header.paragraphs[0]
     hp.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    hrun = hp.add_run("CSE499B Senior Design Project | Chapter 7: Practical Usage & Dashboard Application")
+    hrun = hp.add_run("CSE 499 Senior Design Project | Chapter 7: Practical Usage & Dashboard Application")
     hrun.font.name = 'Calibri'
     hrun.font.size = Pt(8.5)
     hrun.font.color.rgb = COLOR_MUTED
@@ -89,7 +89,7 @@ def add_title_block(doc):
     p_sub = doc.add_paragraph()
     p_sub.alignment = WD_ALIGN_PARAGRAPH.CENTER
     format_paragraph(p_sub, space_before=0, space_after=12)
-    r_sub = p_sub.add_run("End-to-End Operational Deployment, Multi-Page Security Dashboard, Real-Time Network Sniffing, Dual-Layer Explainable AI & RESTful Cloud Ingress\nSenior Design Capstone Project Report (CSE499B)")
+    r_sub = p_sub.add_run("End-to-End Operational Deployment, Multi-Page Security Dashboard, Real-Time Network Sniffing, Dual-Layer Explainable AI & RESTful Cloud Ingress\nSenior Design Capstone Project Report (CSE 499)")
     r_sub.font.name = 'Calibri'
     r_sub.font.size = Pt(10.5)
     r_sub.font.italic = True
@@ -245,15 +245,15 @@ def generate_practical_usage_document():
     add_title_block(doc)
     
     # ---------------------------------------------------------
-    # 7.1 Historical Evolution: CSE499A vs CSE499B Dashboard
+    # 7.1 Historical Evolution: CSE499A vs CSE 499 Dashboard
     # ---------------------------------------------------------
     add_heading_1(doc, "7.1 Evolution of the Operational Security Dashboard (499A to 499B)")
     add_body_p(doc, "In the CSE499A research phase, intrusion detection evaluation was primarily delivered through static Jupyter notebook scripts, paired with a minimal FastAPI prototype providing only two basic functions: simple CSV uploading and raw tabular text output. While sufficient for offline baseline verification, the 499A implementation lacked interactive telemetry controls, real-time alert mechanisms, explainable AI explanations, and production-grade federated monitoring.")
     
-    add_body_p(doc, "The CSE499B project extension completely reimagines the operational interface into an enterprise-ready, multi-page Security Operations Center (SOC) dashboard. Built with Flask, Jinja2 templating, dynamic CSS glassmorphism, client-side asynchronous JavaScript, and RESTful API backends, the new dashboard transforms complex machine learning, federated averaging, and reinforcement learning pipelines into an intuitive, real-time command center for cybersecurity administrators.")
+    add_body_p(doc, "The CSE 499 project extension completely reimagines the operational interface into an enterprise-ready, multi-page Security Operations Center (SOC) dashboard. Built with Flask, Jinja2 templating, dynamic CSS glassmorphism, client-side asynchronous JavaScript, and RESTful API backends, the new dashboard transforms complex machine learning, federated averaging, and reinforcement learning pipelines into an intuitive, real-time command center for cybersecurity administrators.")
 
     # Table 7.1: Evolution Comparison
-    headers_t71 = ["Operational Dimension", "CSE499A Foundation Baseline", "CSE499B Production Dashboard System", "Operational Benefit"]
+    headers_t71 = ["Operational Dimension", "CSE499A Foundation Baseline", "CSE 499 Production Dashboard System", "Operational Benefit"]
     data_t71 = [
         ["Web Framework", "FastAPI (Basic 2-route backend)", "Flask + Jinja2 + Asynchronous REST API", "Full multi-page responsive web dashboard"],
         ["User Interface Pages", "Single static HTML page", "7 Dedicated Functional View Pages", "Specialized views for Predict, FL, RL, History, Settings"],
@@ -267,7 +267,7 @@ def generate_practical_usage_document():
     align_t71 = [WD_ALIGN_PARAGRAPH.LEFT, WD_ALIGN_PARAGRAPH.LEFT, WD_ALIGN_PARAGRAPH.LEFT, WD_ALIGN_PARAGRAPH.LEFT]
     add_styled_table(doc, headers_t71, data_t71, [1.3, 1.6, 1.8, 2.1], align_t71)
 
-    add_callout_box(doc, "CSE499B transitions the user interface from a rudimentary offline demonstration into an enterprise-grade SOC platform, enabling real-time tri-model inference, plain-English LLM threat explainability, live Scapy packet sniffing, and continuous human-in-the-loop federated model synchronization.", "OPERATIONAL PARADIGM SHIFT")
+    add_callout_box(doc, "CSE 499 transitions the user interface from a rudimentary offline demonstration into an enterprise-grade SOC platform, enabling real-time tri-model inference, plain-English LLM threat explainability, live Scapy packet sniffing, and continuous human-in-the-loop federated model synchronization.", "OPERATIONAL PARADIGM SHIFT")
 
     # ---------------------------------------------------------
     # 7.2 End-to-End System Deployment Architecture
@@ -314,7 +314,7 @@ def generate_practical_usage_document():
     # 7.4 Tri-Model Consensus & Real-Time Alert Engine
     # ---------------------------------------------------------
     add_heading_1(doc, "7.4 Tri-Model Consensus & Real-Time Alert Monitoring Engine")
-    add_body_p(doc, "Rather than relying on a single fallible classifier, CSE499B deploys a multi-model consensus architecture that cross-references three distinct analytical paradigms for every network flow:")
+    add_body_p(doc, "Rather than relying on a single fallible classifier, CSE 499 deploys a multi-model consensus architecture that cross-references three distinct analytical paradigms for every network flow:")
 
     # Table 7.2: Tri-Model Architecture
     headers_t72 = ["Model Layer", "Active Model / Architecture", "Analytical Role in Pipeline", "Operational Decision Logic"]
@@ -333,7 +333,7 @@ def generate_practical_usage_document():
     # 7.5 Dual-Layer Explainable AI (XAI) & Generative Threat Synthesis
     # ---------------------------------------------------------
     add_heading_1(doc, "7.5 Dual-Layer Explainable AI (XAI) & Generative Threat Synthesis")
-    add_body_p(doc, "To eliminate the traditional 'black-box' opacity of machine learning in cybersecurity, CSE499B integrates a dual-layer XAI framework combining quantitative feature attribution with generative natural language synthesis:")
+    add_body_p(doc, "To eliminate the traditional 'black-box' opacity of machine learning in cybersecurity, CSE 499 integrates a dual-layer XAI framework combining quantitative feature attribution with generative natural language synthesis:")
 
     add_bullet(doc, "For tree models, exact Shapley values are calculated via shap.TreeExplainer. For neural networks and fallback models, normalized feature deviation impact vectors phi_i = I_i * (x_i - mu_i) are computed, extracting the top 8 positive and negative network features influencing the decision.", "Layer 1 — SHAP Quantitative Attribution: ")
     add_bullet(doc, "Operating via groq_explain.py, feature impact vectors, model predictions, confidence scores, and agreement states are compiled into a structured prompt sent to Groq Cloud running Llama 3.3 70B Versatile (llama-3.3-70b-versatile). The LLM returns a structured 3-bullet briefing explaining: (1) Threat Nature, (2) Critical Network Signals, and (3) Recommended Mitigation.", "Layer 2 — Generative LLM Threat Briefing: ")

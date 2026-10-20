@@ -261,7 +261,7 @@ __SAVE_MSG__
 
 def patch_combined(nb):
     cells = nb["cells"]
-    set_src(cells[0], """# Advanced Intrusion Detection System for SDN-IoT
+    set_src(cells[0], """# Privacy-Preserving Federated and Reinforcement Learning-Based Intrusion Detection System for IoT Devices
 ## Traditional ML + Deep Learning + Custom + Real Federated Learning + Multi-Agent RL
 
 **Dataset:** `ASEADOS_SDN_IoT.csv`

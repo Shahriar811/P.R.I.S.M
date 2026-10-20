@@ -1,12 +1,10 @@
 <p align="center">
-  <img src="docs/images/prism-banner.svg" alt="P.R.I.S.M — SDN-IoT intrusion detection, final-year capstone project" width="100%">
+  <img src="docs/images/prism-banner.svg" alt="Privacy-Preserving Federated and Reinforcement Learning-Based Intrusion Detection System for IoT Devices — P.R.I.S.M, CSE 499 capstone project" width="100%">
 </p>
 
-# P.R.I.S.M
+# Privacy-Preserving Federated and Reinforcement Learning-Based Intrusion Detection System for IoT Devices
 
-### Intrusion Detection for SDN and IoT with Federated and Reinforcement Learning
-
-**Final-year project · Capstone project · CSE499B**
+**P.R.I.S.M · Final-year project · Capstone project · CSE 499**
 
 P.R.I.S.M is my final-year capstone project exploring how supervised learning,
 reinforcement learning, federated training, and explainable AI can work together

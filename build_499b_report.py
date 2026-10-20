@@ -57,7 +57,7 @@ def add_header_footer(doc):
     header = section.header
     hp = header.paragraphs[0]
     hp.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    hrun = hp.add_run("CSE499B Senior Project Report | Group 2 | Chapter 4 & Chapter 7")
+    hrun = hp.add_run("CSE 499 Senior Project Report | Group 2 | Chapter 4 & Chapter 7")
     hrun.font.name = 'Calibri'
     hrun.font.size = Pt(8.5)
     hrun.font.color.rgb = COLOR_MUTED
@@ -88,7 +88,7 @@ def add_title_block(doc):
     p2 = doc.add_paragraph()
     p2.alignment = WD_ALIGN_PARAGRAPH.CENTER
     format_paragraph(p2, space_before=0, space_after=18)
-    run2 = p2.add_run("Department of Electrical and Computer Engineering\nSenior Design Capstone Project Report (CSE499B)")
+    run2 = p2.add_run("Department of Electrical and Computer Engineering\nSenior Design Capstone Project Report (CSE 499)")
     run2.font.name = 'Calibri'
     run2.font.size = Pt(13)
     run2.font.color.rgb = COLOR_SECONDARY
@@ -96,7 +96,7 @@ def add_title_block(doc):
     p3 = doc.add_paragraph()
     p3.alignment = WD_ALIGN_PARAGRAPH.CENTER
     format_paragraph(p3, space_before=6, space_after=18)
-    run3 = p3.add_run("Privacy-Preserved Federated Learning and Reinforcement Learning Framework for Cyber-Physical Systems Intrusion Detection")
+    run3 = p3.add_run("Privacy-Preserving Federated and Reinforcement Learning-Based Intrusion Detection System for IoT Devices")
     run3.font.name = 'Calibri'
     run3.font.size = Pt(16)
     run3.font.bold = True
@@ -274,9 +274,9 @@ def build_document():
     
     add_body_p(doc, "While CSE499A successfully proved that intrusion detection can function under simulated federated data splits, it retained four critical operational limitations: (1) static detection logic vulnerable to concept drift, (2) reliance on simulated client partitioning rather than a production client-server network framework, (3) lack of continuous reinforcement learning adaptation for dynamic attack mitigation, and (4) absence of explainable AI (XAI) for real-time security analyst interpretability.")
     
-    add_body_p(doc, "This report documents the CSE499B project extension, specifically detailing the author's primary contributions across Chapter 4 (Methodology) and Chapter 7 (Practical Usage & Dashboard Application). CSE499B transitions the framework from an offline simulation into a production-grade, multi-process client-server Federated Learning (FL) architecture, an integrated Dueling Deep Q-Network (DQN) Reinforcement Learning (RL) continual learning pipeline, a dual-layer Explainable AI (SHAP + Groq Llama 3.3 70B LLM) engine, and an interactive multi-page web security dashboard with live packet sniffing and secure HTTPS remote access via ngrok.")
+    add_body_p(doc, "This report documents the CSE 499 project extension, specifically detailing the author's primary contributions across Chapter 4 (Methodology) and Chapter 7 (Practical Usage & Dashboard Application). CSE 499 transitions the framework from an offline simulation into a production-grade, multi-process client-server Federated Learning (FL) architecture, an integrated Dueling Deep Q-Network (DQN) Reinforcement Learning (RL) continual learning pipeline, a dual-layer Explainable AI (SHAP + Groq Llama 3.3 70B LLM) engine, and an interactive multi-page web security dashboard with live packet sniffing and secure HTTPS remote access via ngrok.")
 
-    add_callout_box(doc, "CSE499A achieved offline detection accuracy of 84.03% (XGBoost) and 80.35% (simulated FL-GRU). CSE499B elevates this baseline into a production-ready, client-server federated RL system with real-time continuous learning, SHAP feature impact attribution, Groq LLM natural language threat explanations, live packet sniffing, and ngrok HTTPS remote deployment.", "HISTORICAL BRIDGE: CSE499A VS CSE499B")
+    add_callout_box(doc, "CSE499A achieved offline detection accuracy of 84.03% (XGBoost) and 80.35% (simulated FL-GRU). CSE 499 elevates this baseline into a production-ready, client-server federated RL system with real-time continuous learning, SHAP feature impact attribution, Groq LLM natural language threat explanations, live packet sniffing, and ngrok HTTPS remote deployment.", "HISTORICAL BRIDGE: CSE499A VS CSE 499")
 
     # ---------------------------------------------------------
     # CHAPTER 4: METHODOLOGY
@@ -284,7 +284,7 @@ def build_document():
     add_heading_1(doc, "Chapter 4: Methodology")
     
     add_heading_2(doc, "4.1 Production Federated Learning Architecture (Main Client-Server System)")
-    add_body_p(doc, "Unlike simulation-based federated learning setups that partition static data arrays in memory within a single Python script, the CSE499B production architecture implements a decentralized, multi-process client-server system built upon the Flower (flwr) framework. The architecture decouples the central aggregator from independent edge clients, enabling federated model updates over real network interfaces via gRPC (Google Remote Procedure Call) protocols.")
+    add_body_p(doc, "Unlike simulation-based federated learning setups that partition static data arrays in memory within a single Python script, the CSE 499 production architecture implements a decentralized, multi-process client-server system built upon the Flower (flwr) framework. The architecture decouples the central aggregator from independent edge clients, enabling federated model updates over real network interfaces via gRPC (Google Remote Procedure Call) protocols.")
     
     add_body_p(doc, "The production FL system consists of two primary operational entities:", "System Component Breakdown: ")
     add_body_p(doc, "Operating via federated/rl_server.py on TCP port 8080. The server initializes global neural network weights, coordinates communication rounds, enforces minimum client quorum requirements (min_fit_clients = 3), collects client parameter updates, executes weighted Federated Averaging (FedAvg), and evaluates global test metrics against a held-out evaluation dataset (test.npz).", "1. Central FL Aggregator Server: ")
@@ -307,7 +307,7 @@ def build_document():
     add_styled_table(doc, headers_t41, data_t41, [1.8, 2.2, 2.5])
 
     add_heading_2(doc, "4.2 The RL + FL Integrated Pipeline & Working Methodology")
-    add_body_p(doc, "A central innovation of CSE499B is the integration of Reinforcement Learning (RL) with Federated Learning (FL) into a unified, self-improving security pipeline. While supervised federated learning models are rigid once trained, reinforcement learning allows defensive agents to continuously adapt to changing network behaviors and novel attack vectors.")
+    add_body_p(doc, "A central innovation of CSE 499 is the integration of Reinforcement Learning (RL) with Federated Learning (FL) into a unified, self-improving security pipeline. While supervised federated learning models are rigid once trained, reinforcement learning allows defensive agents to continuously adapt to changing network behaviors and novel attack vectors.")
 
     add_body_p(doc, "The RL framework employs a Dueling Deep Q-Network (Dueling DQN) architecture. In standard DQN, the neural network directly estimates the Q-value $Q(s, a)$ for each action $a$ given state $s$. Dueling DQN decouples this calculation into two separate streams:", "Mathematical Formulation of Dueling DQN: ")
     add_body_p(doc, "1. Value Stream $V(s): \\mathbb{R}^{42} \\rightarrow \\mathbb{R}^1$, which estimates the scalar value of being in current network state $s$.\n2. Advantage Stream $A(s, a): \\mathbb{R}^{42} \\rightarrow \\mathbb{R}^5$, which evaluates the relative advantage of choosing each specific attack class action $a \\in \\{\\text{Benign, DoS, DDoS, Bot, Prob}\\}$.")
@@ -340,7 +340,7 @@ def build_document():
     add_styled_table(doc, headers_t42, data_t42, [1.8, 2.0, 2.7])
 
     add_heading_2(doc, "4.3 Dual-Layer Explainable AI (XAI) & LLM Framework")
-    add_body_p(doc, "Machine learning and deep learning models in intrusion detection are frequently criticized as 'black boxes', making security analysts hesitant to trust automated alerts. CSE499B resolves this by introducing a Dual-Layer Explainable AI (XAI) framework that combines quantitative feature attribution with generative natural language explanations.")
+    add_body_p(doc, "Machine learning and deep learning models in intrusion detection are frequently criticized as 'black boxes', making security analysts hesitant to trust automated alerts. CSE 499 resolves this by introducing a Dual-Layer Explainable AI (XAI) framework that combines quantitative feature attribution with generative natural language explanations.")
 
     add_image_figure(doc, "xai_llm_flow.png", "Figure 4.4: Dual-Layer Explainable AI Pipeline incorporating SHAP feature attribution and Groq Llama 3.3 70B LLM explanations.")
 
@@ -369,7 +369,7 @@ def build_document():
     add_heading_1(doc, "Chapter 7: Practical Usage & Dashboard Application")
 
     add_heading_2(doc, "7.1 FL Aggregation Protocol & Privacy Infrastructure")
-    add_body_p(doc, "The deployment of federated learning in practical security operations requires a robust aggregation protocol that balances privacy protection with model convergence speed. CSE499B implements a 5-step aggregation protocol sequence over gRPC channels:")
+    add_body_p(doc, "The deployment of federated learning in practical security operations requires a robust aggregation protocol that balances privacy protection with model convergence speed. CSE 499 implements a 5-step aggregation protocol sequence over gRPC channels:")
 
     add_body_p(doc, "1. Round Initialization: The central server (rl_server.py) broadcasts current global Dueling DQN neural network parameters $w_t$ to all connected edge client nodes.\n2. Local Model Updates: Each edge client loads $w_t$, attaches its private local dataset, and executes 2 epochs of Adam optimization. Raw network flow logs remain sealed inside local storage.\n3. Weight Parameter Transmission: Edge clients extract updated state dictionaries $w_{t+1}^k$ and transmit parameter matrices along with sample count $n_k$ back to the server over gRPC on port 8080.\n4. Weighted Aggregation: The server computes the element-wise weighted average of received weight tensors using the FedAvg equation.\n5. Global State Serialization: The aggregated global model is evaluated against held-out validation data (test.npz) and saved to global_model.pt and Saved model/FL/federated_rl_fedavg.pt.")
 
@@ -388,7 +388,7 @@ def build_document():
     add_styled_table(doc, headers_t71, data_t71, [2.0, 2.0, 2.5])
 
     add_heading_2(doc, "7.2 UI/UX Design of Security Dashboard, Real-Time Alert Monitoring & Deployment")
-    add_body_p(doc, "To transform complex machine learning and federated learning pipelines into an intuitive operational tool for network administrators, CSE499B provides a responsive, multi-page web application dashboard built using Flask, Jinja2 templates, modern CSS glassmorphism, and client-side JavaScript.")
+    add_body_p(doc, "To transform complex machine learning and federated learning pipelines into an intuitive operational tool for network administrators, CSE 499 provides a responsive, multi-page web application dashboard built using Flask, Jinja2 templates, modern CSS glassmorphism, and client-side JavaScript.")
 
     add_image_figure(doc, "dashboard_deployment_architecture.png", "Figure 7.2: End-to-End System Deployment Architecture showing Flask UI, FastAPI backend, Live Packet Sniffer, and ngrok HTTPS Tunnel.")
 
@@ -402,10 +402,10 @@ def build_document():
     add_body_p(doc, "Allows bulk uploading of network traffic CSV files, generating aggregated multi-class attack breakdowns and risk summaries.", "7. CSV Batch Upload (/predict_csv): ")
 
     add_heading_3(doc, "7.2.1 Real-Time Network Alert Sniffer (live_sniffer.py)")
-    add_body_p(doc, "For live operational networks, CSE499B includes live_sniffer.py, a real-time network traffic sniffer powered by Scapy. The sniffer captures live TCP/UDP packets from local network interfaces, aggregates packet statistics into 42 flow-level numerical features (Flow Duration, Packet Lengths, Inter-Arrival Times, Header Lengths, Flags), applies scaler.joblib normalization, and submits live vectors to the inference engine. Instant alerts are triggered whenever attack traffic (DoS, DDoS, Bot, Prob) is detected.")
+    add_body_p(doc, "For live operational networks, CSE 499 includes live_sniffer.py, a real-time network traffic sniffer powered by Scapy. The sniffer captures live TCP/UDP packets from local network interfaces, aggregates packet statistics into 42 flow-level numerical features (Flow Duration, Packet Lengths, Inter-Arrival Times, Header Lengths, Flags), applies scaler.joblib normalization, and submits live vectors to the inference engine. Instant alerts are triggered whenever attack traffic (DoS, DDoS, Bot, Prob) is detected.")
 
     add_heading_3(doc, "7.2.2 Global Deployment & Remote Access (FastAPI + ngrok)")
-    add_body_p(doc, "To enable external deployment and demonstration across remote networks without exposing internal infrastructure, CSE499B integrates a dual-server architecture: Flask handles web UI rendering on port 7860, while FastAPI serves RESTful inference endpoints on port 8000. Public secure remote access is established using expose_ngrok.ps1, which creates an encrypted HTTPS tunnel (e.g., https://xxxx.ngrok-free.app) forwarding traffic directly to localhost:8000.")
+    add_body_p(doc, "To enable external deployment and demonstration across remote networks without exposing internal infrastructure, CSE 499 integrates a dual-server architecture: Flask handles web UI rendering on port 7860, while FastAPI serves RESTful inference endpoints on port 8000. Public secure remote access is established using expose_ngrok.ps1, which creates an encrypted HTTPS tunnel (e.g., https://xxxx.ngrok-free.app) forwarding traffic directly to localhost:8000.")
 
     add_image_figure(doc, "centralized_vs_fl_performance.png", "Figure 7.3: Performance Comparison Bar Chart between 499A Centralized Baselines and 499B Federated & RL Models.")
 
@@ -427,7 +427,7 @@ def build_document():
     # CONCLUSION & FUTURE WORK
     # ---------------------------------------------------------
     add_heading_1(doc, "Conclusion & Future Work")
-    add_body_p(doc, "The CSE499B project extension successfully elevates the intrusion detection framework from an offline simulation into a production-grade, privacy-preserved, self-improving security application. By combining Flower-based multi-process Federated Learning over gRPC with Dueling DQN Reinforcement Learning continual learning, dual-layer SHAP + Groq LLM Explainable AI, live packet sniffing, and ngrok HTTPS remote deployment, the system addresses all key research gaps identified in CSE499A.")
+    add_body_p(doc, "The CSE 499 project extension successfully elevates the intrusion detection framework from an offline simulation into a production-grade, privacy-preserved, self-improving security application. By combining Flower-based multi-process Federated Learning over gRPC with Dueling DQN Reinforcement Learning continual learning, dual-layer SHAP + Groq LLM Explainable AI, live packet sniffing, and ngrok HTTPS remote deployment, the system addresses all key research gaps identified in CSE499A.")
 
     add_body_p(doc, "Future work will focus on expanding the edge client population to 50+ heterogeneous IoT nodes, integrating differential privacy noise injection within FedAvg rounds, and deploying custom 1D-CNN + Bi-GRU + Self-Attention deep learning architectures for enhanced feature representation.")
 

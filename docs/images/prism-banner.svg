@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1440" height="440" viewBox="0 0 1440 440" role="img" aria-labelledby="title desc">
-  <title id="title">P.R.I.S.M — final-year capstone project</title>
-  <desc id="desc">Intrusion detection for SDN and IoT. XGBoost, five local RL classifiers, and Flower federated training.</desc>
+  <title id="title">Privacy-Preserving Federated and Reinforcement Learning-Based Intrusion Detection System for IoT Devices</title>
+  <desc id="desc">P.R.I.S.M — CSE 499 final-year capstone project. XGBoost, five local RL classifiers, and Flower federated training.</desc>
   <defs>
     <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#0b1328"/><stop offset="1" stop-color="#122e45"/></linearGradient>
     <linearGradient id="line"><stop stop-color="#50e3c2"/><stop offset="1" stop-color="#67aaff"/></linearGradient>
@@ -9,10 +9,13 @@
   <rect width="1440" height="440" rx="20" fill="url(#bg)"/>
   <rect width="1440" height="440" rx="20" fill="url(#dots)"/>
   <rect x="60" y="48" width="362" height="30" rx="15" fill="#173b48"/>
-  <text x="80" y="68" fill="#84edce" font-family="Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" letter-spacing="1.8">FINAL-YEAR CAPSTONE · CSE499B</text>
+  <text x="80" y="68" fill="#84edce" font-family="Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" letter-spacing="1.8">FINAL-YEAR CAPSTONE · CSE 499</text>
   <text x="58" y="160" fill="#f4f9ff" font-family="Segoe UI,Arial,sans-serif" font-size="78" font-weight="750" letter-spacing="5">P.R.I.S.M</text>
-  <text x="62" y="207" fill="#d3e5f6" font-family="Segoe UI,Arial,sans-serif" font-size="27">Intrusion detection for SDN + IoT</text>
-  <text x="62" y="245" fill="#95acc5" font-family="Segoe UI,Arial,sans-serif" font-size="18">Detection. Adaptive classification. Collaborative learning.</text>
+  <text x="62" y="202" fill="#d3e5f6" font-family="Segoe UI,Arial,sans-serif" font-size="25">
+    <tspan x="62">Privacy-Preserving Federated and</tspan>
+    <tspan x="62" dy="32">Reinforcement Learning-Based Intrusion</tspan>
+    <tspan x="62" dy="32">Detection System for IoT Devices</tspan>
+  </text>
   <path d="M1015 114 L1195 92 L1320 190 L1228 270 L1040 244 Z M1015 114 L1228 270 M1195 92 L1040 244 M1040 244 L1320 190" stroke="url(#line)" stroke-width="2" fill="none" opacity=".5"/>
   <g fill="#17384b" stroke="#50e3c2" stroke-width="2"><circle cx="1015" cy="114" r="17"/><circle cx="1195" cy="92" r="17"/><circle cx="1320" cy="190" r="17"/><circle cx="1228" cy="270" r="17"/><circle cx="1040" cy="244" r="17"/></g>
   <circle cx="1163" cy="181" r="48" fill="#102b3c" stroke="#7ccaff" stroke-width="2"/>

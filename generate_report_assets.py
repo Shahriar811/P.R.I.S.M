@@ -1,7 +1,7 @@
 """
 generate_report_assets.py
 =========================
-Renders 8 high-resolution (300 DPI) visual assets for the CSE499B Project Report:
+Renders 8 high-resolution (300 DPI) visual assets for the CSE 499 Project Report:
 1. fl_main_architecture.png
 2. rl_fl_integrated_pipeline.png
 3. xai_llm_flow.png
