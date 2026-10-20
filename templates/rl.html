@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}RL Agents — P.R.I.S.M{% endblock %}
+{% block content %}
+<section class="page-hero">
+  <div class="badge"><span class="dot"></span> Local RL then Federated RL</div>
+  <h1>Reinforcement Learning</h1>
+  <p>Train local RL agents first (Section 10). Then Flower federates an RL agent across clients (<strong>RL → FL</strong>) so the global model learns from private data without seeing it.</p>
+</section>
+
+<div class="ops-card" style="margin-bottom:16px">
+  <h2><span class="hb" id="rlHb"></span> Local RL agents (Section 10)</h2>
+  <div class="ops-row"><span>Agents loaded</span><strong id="rlCount">—</strong></div>
+  <div id="rlAgents" style="margin:10px 0"></div>
+  <div class="ops-row"><span>Last RL action</span><strong id="rlAction">—</strong></div>
+  <div class="ops-row"><span>Last RL agent</span><strong id="rlAgent">—</strong></div>
+  <div class="ops-row"><span>Confidence</span><strong id="rlConf">—</strong></div>
+  <div class="ops-row"><span>Last inference</span><strong id="rlTime">—</strong></div>
+  <div class="ops-row"><span>Mode</span><strong id="rlMode">real_pytorch_inference</strong></div>
+</div>
+
+<div class="ops-card" style="margin-bottom:16px">
+  <h2>RL → FL (federated RL)</h2>
+  <div class="ops-row"><span>Federated RL loaded</span><strong id="flRlLoaded">—</strong></div>
+  <div class="ops-row"><span>Pipeline</span><strong id="flRlPipeline">RL -> FL</strong></div>
+  <div class="ops-row"><span>Architecture</span><strong id="flRlLearn">—</strong></div>
+  <div class="ops-row"><span>Last FL inference</span><strong id="flRlLast">—</strong></div>
+</div>
+
+<div class="ops-card" style="margin-bottom:16px">
+  <h2>Continual learning (UI corrections)</h2>
+  <div class="ops-row"><span>Learning switch</span><strong id="learnSwitchLive">—</strong></div>
+  <div class="ops-row"><span>Updates</span><strong id="learnUpdatesLive">—</strong></div>
+  <div class="ops-row"><span>Replay memory</span><strong id="learnReplayLive">—</strong></div>
+  <div class="ops-row"><span>Recent accuracy</span><strong id="learnAccLive">—</strong></div>
+  <div class="ops-row"><span>Saved new-attack samples</span><strong id="learnSavedLive">—</strong></div>
+  <div class="ops-row"><span>FedAvg sync</span><strong id="learnSyncLive">—</strong></div>
+  <div class="btn-row" style="margin-top:12px">
+    <a class="btn btn-primary" href="{{ url_for('predict_page') }}">Open Predict to teach</a>
+  </div>
+</div>
+
+<div class="grid">
+  <div class="card">
+    <h2><span class="icon">RL</span> Last agent votes</h2>
+    <div id="rlAgentsDetail"><p style="color:var(--muted)">Run a prediction first to fill this list.</p></div>
+    <div class="btn-row">
+      <a class="btn btn-primary" href="{{ url_for('predict_page') }}">Run Predict</a>
+      <a class="btn" href="{{ url_for('fl_page') }}">Open FL</a>
+    </div>
+  </div>
+  <div class="card" style="display:none">
+    <h2><span class="icon">?</span> Order of work</h2>
+    <ol style="margin-left:18px;font-size:14px;line-height:1.6;color:var(--muted)">
+      <li>Train <strong>Section 10</strong> (local RL checkpoints in <code>Saved model/RL/</code>).</li>
+      <li>Run <code>federated/run_rl_federated.bat</code> (Flower averages RL weights).</li>
+      <li>Restart <code>ids_server.py</code>.</li>
+      <li>Predict page: compare Local RL vs Federated RL (RL→FL).</li>
+    </ol>
+  </div>
+</div>
+
+<div class="card" style="margin-top:16px">
+  <h2><span class="icon">AI</span> Explain RL (Groq)</h2>
+  <div class="btn-row" style="margin-top:0;margin-bottom:10px">
+    <button class="btn btn-primary" onclick="Aegis.askLlm({mode:'rl'})">Explain local RL vs FL + teaching</button>
+  </div>
+  <div class="llm-box">
+    <div class="llm-head">
+      <h3>Plain-language RL</h3>
+    </div>
+    <div class="llm-body" id="llmText">Ask Groq to explain local agents, GLOBAL federated RL, and continual learning.</div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+async function refresh(){
+  try{
+    const [d, rs]=await Promise.all([Aegis.fetchLive(), (await fetch('/rlfl_status')).json()]);
+    Aegis.renderRlPanel(d);
+    document.getElementById('learnSavedLive').textContent=rs.feedback?.samples ?? 0;
+    document.getElementById('learnSyncLive').textContent=rs.sync?.running ? 'RUNNING' : (rs.sync?.last_result || 'idle');
+    document.getElementById('liveChip').textContent='RL monitor';
+  }catch(e){}
+  try{
+    const s=await (await fetch('/rl_learn_status')).json();
+    document.getElementById('learnSwitchLive').innerHTML=s.learning
+      ? '<span class="ops-good">ON</span>' : '<span class="ops-warn">OFF</span>';
+    document.getElementById('learnUpdatesLive').textContent=s.n_updates;
+    document.getElementById('learnReplayLive').textContent=s.replay_size;
+    document.getElementById('learnAccLive').textContent=
+      s.recent_accuracy==null?'—':(s.recent_accuracy*100).toFixed(0)+'%';
+  }catch(e){}
+}
+refresh();
+setInterval(refresh, 3000);
+</script>
+{% endblock %}

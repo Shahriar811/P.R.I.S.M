@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block title %}AI Security Advisor — P.R.I.S.M{% endblock %}
+{% block content %}
+<section class="page-hero">
+  <div class="badge"><span class="dot"></span> AI Advisor</div>
+  <h1>AI Security Advisor</h1>
+  <p>Interactive guidance: tactical containment steps for operators and enterprise cybersecurity playbooks for organizations.</p>
+</section>
+
+<div class="card full">
+  <div class="advisor-header">
+    <h2><span class="icon">💬</span> AI Security Advisor</h2>
+  </div>
+
+  <div class="advisor-chat-window" id="advisorChatWindow" style="max-height:480px;min-height:340px">
+    <div class="chat-msg assistant">
+      <div class="chat-bubble-author"><span class="hb on"></span> P.R.I.S.M AI SECURITY ADVISOR</div>
+      <div class="chat-bubble-content">
+        <p>Welcome to the <strong>P.R.I.S.M AI Security Advisor</strong>. I provide expert tactical containment guidance for operators and strategic mitigation playbooks for organizations.</p>
+        <p>Type your question below (e.g. <em>"How do I block incoming spoofed SYN floods?"</em> or <em>"What should our incident response team do after a botnet alert?"</em>).</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="chat-input-row">
+    <textarea id="advisorInput" placeholder="Ask how to mitigate this attack, configure firewall rules, or draft organizational guidelines..." onkeydown="handleAdvisorKey(event)"></textarea>
+    <button type="button" class="btn btn-primary" id="advisorSendBtn" onclick="sendAdvisorChat()">Send</button>
+    <button type="button" class="btn" onclick="clearAdvisorChat()">Clear</button>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let advisorHistory = [];
+let liveContext = {
+  prediction: 'DDoS',
+  confidence: 0.94,
+  model: 'XGBoost',
+  rl_action: 'DDoS',
+  fl_action: 'DDoS'
+};
+
+async function initAdvisor(){
+  try {
+    const live = await Aegis.fetchLive();
+    const inf = live.federated?.last_inference || live.reinforcement?.last_inference?.primary;
+    if(inf){
+      liveContext.prediction = inf.prediction || inf.action || 'DDoS';
+      liveContext.confidence = inf.confidence || 0.94;
+    }
+  } catch(e){}
+}
+
+function appendChatMsg(role, text){
+  const win = document.getElementById('advisorChatWindow');
+  if(!win) return;
+  const isUser = role === 'user';
+  const msgEl = document.createElement('div');
+  msgEl.className = 'chat-msg ' + (isUser ? 'user' : 'assistant');
+  
+  const authorEl = document.createElement('div');
+  authorEl.className = 'chat-bubble-author';
+  authorEl.innerHTML = isUser ? '👤 OPERATOR' : '<span class="hb on"></span> P.R.I.S.M AI SECURITY ADVISOR';
+  
+  const contentEl = document.createElement('div');
+  contentEl.className = 'chat-bubble-content';
+  contentEl.innerHTML = isUser ? `<p>${text.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>` : Aegis.formatLlmText(text);
+  
+  msgEl.appendChild(authorEl);
+  msgEl.appendChild(contentEl);
+  win.appendChild(msgEl);
+  win.scrollTop = win.scrollHeight;
+}
+
+async function sendAdvisorChat(customText){
+  const input = document.getElementById('advisorInput');
+  const text = (customText || (input ? input.value : '')).trim();
+  if(!text) return;
+  
+  if(input && !customText) input.value = '';
+  
+  appendChatMsg('user', text);
+  advisorHistory.push({ role: 'user', content: text });
+  
+  const win = document.getElementById('advisorChatWindow');
+  const loaderEl = document.createElement('div');
+  loaderEl.id = 'advisorTyping';
+  loaderEl.className = 'chat-msg assistant';
+  loaderEl.innerHTML = '<div class="chat-bubble-author"><span class="hb on"></span> P.R.I.S.M AI SECURITY ADVISOR</div><div class="chat-bubble-content" style="color:var(--muted)">Analyzing incident response playbook…</div>';
+  win.appendChild(loaderEl);
+  win.scrollTop = win.scrollHeight;
+  
+  const sendBtn = document.getElementById('advisorSendBtn');
+  if(sendBtn) sendBtn.disabled = true;
+  
+  try {
+    const payload = {
+      messages: advisorHistory,
+      context: {
+        prediction: liveContext.prediction || 'DDoS',
+        confidence: liveContext.confidence || 0.94,
+        model: 'XGBoost',
+        rl_action: liveContext.prediction || 'DDoS',
+        fl_action: liveContext.prediction || 'DDoS',
+      }
+    };
+    
+    const r = await fetch('/chat_advisor', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const d = await r.json();
+    
+    if(loaderEl.parentNode) loaderEl.parentNode.removeChild(loaderEl);
+    
+    const reply = d.response || d.explanation || 'Unable to generate response.';
+    appendChatMsg('assistant', reply);
+    advisorHistory.push({ role: 'assistant', content: reply });
+  } catch (err) {
+    if(loaderEl.parentNode) loaderEl.parentNode.removeChild(loaderEl);
+    appendChatMsg('assistant', '⚠️ Advisory service error: ' + err.message);
+  } finally {
+    if(sendBtn) sendBtn.disabled = false;
+  }
+}
+
+function askQuickPrompt(text){
+  sendAdvisorChat(text);
+}
+
+function handleAdvisorKey(e){
+  if(e.key === 'Enter' && !e.shiftKey){
+    e.preventDefault();
+    sendAdvisorChat();
+  }
+}
+
+function clearAdvisorChat(){
+  advisorHistory = [];
+  const win = document.getElementById('advisorChatWindow');
+  if(win){
+    win.innerHTML = `
+      <div class="chat-msg assistant">
+        <div class="chat-bubble-author"><span class="hb on"></span> P.R.I.S.M AI SECURITY ADVISOR</div>
+        <div class="chat-bubble-content">
+          <p>Conversation cleared. Ask any question below to generate tailored incident response guidance.</p>
+        </div>
+      </div>
+    `;
+  }
+}
+
+initAdvisor();
+</script>
+{% endblock %}

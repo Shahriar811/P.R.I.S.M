@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en" data-theme="day">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}P.R.I.S.M{% endblock %}</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}">
+<script src="{{ url_for('static', filename='js/site.js') }}"></script>
+{% block head %}{% endblock %}
+</head>
+<body>
+  <div class="topbar">
+    <div class="quick">
+      <span class="role-chip" id="roleChip" onclick="Aegis.promptRole()" title="Click to switch role">Role: Admin 👑</span>
+      <span class="status-chip" id="liveChip">Live</span>
+      <span class="theme-chip" id="themeChip">Day mode</span>
+      <a class="btn" href="{{ url_for('settings_page') }}" style="padding:6px 10px;font-size:9px">Settings</a>
+    </div>
+  </div>
+
+  <div class="app">
+    <nav class="nav" aria-label="Main">
+      <a href="{{ url_for('home') }}" class="admin-only {{ 'active' if active == 'home' else '' }}">Home</a>
+      <a href="{{ url_for('predict_page') }}" class="{{ 'active' if active == 'predict' else '' }}">Predict</a>
+      <a href="{{ url_for('fl_page') }}" class="admin-only {{ 'active' if active == 'fl' else '' }}">Federated FL</a>
+      <a href="{{ url_for('rl_page') }}" class="admin-only {{ 'active' if active == 'rl' else '' }}">RL Agents</a>
+      <a href="{{ url_for('advisor_page') }}" class="{{ 'active' if active == 'advisor' else '' }}">AI Advisor</a>
+      <a href="{{ url_for('history_page') }}" class="{{ 'active' if active == 'history' else '' }}">History</a>
+      <a href="{{ url_for('about_page') }}" class="admin-only {{ 'active' if active == 'about' else '' }}">Classes</a>
+      <a href="{{ url_for('settings_page') }}" class="{{ 'active' if active == 'settings' else '' }}">Settings</a>
+    </nav>
+
+    {% block content %}{% endblock %}
+
+  </div>
+
+  <!-- Role Selection Gateway Modal -->
+  <div class="role-modal-overlay hidden" id="roleModalOverlay">
+    <div class="role-modal">
+      <h2>Select Access Portal</h2>
+      <p style="font-size:14px;color:var(--muted);margin-bottom:14px">Please choose your access level to customize the platform interface.</p>
+      
+      <div class="role-options-grid">
+        <div class="role-card-btn" onclick="Aegis.setRole('admin')">
+          <div class="role-icon">👑</div>
+          <strong>Administrator</strong>
+          <p>Full research console: Federated FL, RL Agents, sample injection, topologies &amp; continual learning.</p>
+        </div>
+        <div class="role-card-btn" onclick="Aegis.setRole('user')">
+          <div class="role-icon">👤</div>
+          <strong>Standard User</strong>
+          <p>Threat detection: Single &amp; Batch CSV prediction (&le;1MB), probability chart, XAI SHAP &amp; AI Advisor.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  {% block scripts %}{% endblock %}
+  <script>
+    window.addEventListener('storage', () => {
+      const s = Aegis.loadSettings();
+      Aegis.applyTheme(s.theme);
+    });
+  </script>
+</body>
+</html>

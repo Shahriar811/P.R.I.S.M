@@ -1,0 +1,459 @@
+{% extends "base.html" %}
+{% block title %}Federated FL — P.R.I.S.M{% endblock %}
+{% block content %}
+<section class="page-hero">
+  <div class="badge"><span class="dot"></span> RL → FL (Flower FedAvg)</div>
+  <h1>Federated Learning</h1>
+  <p><strong>Predict always uses the GLOBAL model</strong> (averaged RL weights). Client cards below only show local training processes — they are not the model shown on Predict.</p>
+</section>
+
+
+<div class="card" id="flVerifyCard" style="margin-bottom:16px;display:none">
+  <h2><span class="icon">OK</span> Verification checklist</h2>
+  <div class="verify-grid" id="verifyGrid">
+    <div class="verify-item warn"><span class="mark">…</span><div><div class="v-title">Loading…</div></div></div>
+  </div>
+</div>
+  <div class="ops-card">
+    <h2>GLOBAL model <span class="source-pill global">used by Predict</span></h2>
+    <div class="split-note">This is the FedAvg result after clients share <em>weights only</em>. Raw client data never leaves the client.</div>
+    <div class="ops-row" style="margin-top:12px"><span>Loaded in UI</span><strong id="flGlobal">—</strong></div>
+    <div class="ops-row"><span>Type</span><strong id="flGlobalType">—</strong></div>
+    <div class="ops-row"><span>Architecture</span><strong id="flArch">—</strong></div>
+    <div class="ops-row"><span>Pipeline</span><strong id="flPipeline">RL -> FL</strong></div>
+    <div class="ops-row"><span>FedAvg round</span><strong id="flRound">—</strong></div>
+    <div class="ops-row"><span>Global test acc</span><strong id="flAcc">—</strong></div>
+    <div class="ops-row"><span>Checkpoint path</span><strong id="flPath" style="font-size:11px;word-break:break-all">—</strong></div>
+    <div class="ops-row"><span>Last Predict use</span><strong id="flLast">—</strong></div>
+  </div>
+  <div class="ops-card">
+    <h2>CLIENT processes <span class="source-pill client">train only</span></h2>
+    <div class="split-note">Clients learn on private shards. They are <strong>not</strong> what Predict shows. Their contribution appears only after averaging into GLOBAL.</div>
+    <div class="ops-row" style="margin-top:12px"><span>Clients alive</span><strong id="flClientsAlive">—</strong></div>
+    <div class="ops-row"><span>Used by Predict?</span><strong id="flClientsUsed">NO</strong></div>
+    <div id="flClientStates" style="margin-top:10px"></div>
+  </div>
+</div>
+
+<style>
+  .topology-container {
+    position: relative;
+    width: 100%;
+    height: 400px;
+    background: var(--card2);
+    border: 4px solid var(--border);
+    padding: 24px;
+    box-sizing: border-box;
+    overflow: hidden;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+  }
+  .topo-offline-overlay {
+    position: absolute;
+    inset: 0;
+    background: var(--bg);
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    color: var(--text);
+    transition: opacity 0.5s;
+  }
+  .topo-offline-overlay h3 { font-family: var(--display); font-size: 12px; margin-bottom: 16px; line-height: 1.6; }
+  .topo-offline-overlay p { font-size: 18px; color: var(--muted); }
+  
+  .topo-node {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    padding: 12px;
+    border: 4px solid var(--border);
+    color: var(--text);
+    text-align: center;
+    z-index: 2;
+    transition: all 0.3s;
+    box-shadow: 4px 4px 0 var(--border);
+  }
+  .topo-server {
+    top: 25%; left: 50%;
+    width: 220px;
+    background: var(--card);
+  }
+  .topo-server.active {
+    box-shadow: 6px 6px 0 var(--cyan);
+    border-color: var(--cyan);
+  }
+  .topo-server.receiving {
+    background: var(--warn);
+    box-shadow: 6px 6px 0 var(--warn);
+    transform: translate(-50%, -50%) scale(1.05);
+  }
+
+  .topo-client {
+    top: 75%;
+    width: 160px;
+    background: var(--card);
+  }
+  .topo-client-0 { left: 20%; }
+  .topo-client-1 { left: 50%; }
+  .topo-client-2 { left: 80%; }
+  
+  .topo-client.active {
+    border-color: var(--accent);
+    box-shadow: 4px 4px 0 var(--accent);
+  }
+  .topo-client.attacked {
+    background: var(--danger);
+    color: #fff;
+    box-shadow: 6px 6px 0 var(--danger);
+    border-color: var(--danger);
+    animation: shake 0.4s;
+  }
+
+  .topo-links {
+    position: absolute;
+    inset: 0;
+    width: 100%; height: 100%;
+    z-index: 1;
+    pointer-events: none;
+  }
+  .topo-line {
+    stroke: var(--border);
+    stroke-width: 4;
+    transition: stroke 0.3s;
+    stroke-dasharray: 8 8;
+  }
+  .topo-line.active {
+    stroke: var(--cyan);
+  }
+
+  .topo-packet {
+    position: absolute;
+    width: 16px; height: 16px;
+    background: var(--cyan);
+    border: 3px solid var(--border);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 3;
+    transform: translate(-50%, -50%);
+  }
+  .topo-packet.attack {
+    background: var(--danger);
+  }
+
+  /* From server (50%,25%) to client (X%, 75%) */
+  @keyframes flowDown0 { 0% { top: 25%; left: 50%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 75%; left: 20%; opacity: 0; } }
+  @keyframes flowDown1 { 0% { top: 25%; left: 50%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 75%; left: 50%; opacity: 0; } }
+  @keyframes flowDown2 { 0% { top: 25%; left: 50%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 75%; left: 80%; opacity: 0; } }
+
+  @keyframes flowUp0 { 0% { top: 75%; left: 20%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 25%; left: 50%; opacity: 0; } }
+  @keyframes flowUp1 { 0% { top: 75%; left: 50%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 25%; left: 50%; opacity: 0; } }
+  @keyframes flowUp2 { 0% { top: 75%; left: 80%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 25%; left: 50%; opacity: 0; } }
+
+  @keyframes shake {
+    0%, 100% { transform: translate(-50%, -50%); }
+    25% { transform: translate(calc(-50% - 5px), -50%); }
+    75% { transform: translate(calc(-50% + 5px), -50%); }
+  }
+
+  .topo-controls {
+    margin-top: 16px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+  }
+</style>
+
+<div style="margin-bottom:12px">
+  <h2 style="font-family:var(--display);font-size:11px;color:var(--cyan);margin-bottom:6px;display:flex;align-items:center;gap:8px">
+    <span class="hb on"></span> LIVE FLOWER FEDERATED LEARNING TOPOLOGY (FedAvg)
+  </h2>
+  <div style="font-size:15px;color:var(--muted);line-height:1.4">
+    Real-time monitoring of 1 Main Server + 3 IoT Client Nodes exchanging Dueling RL model weights via gRPC (Port 8080).
+  </div>
+</div>
+
+<div class="topology-container" id="topoContainer" style="height:420px">
+  <div class="topo-offline-overlay" id="topoOverlay">
+    <h3>Main FL not opened yet</h3>
+    <p>Run `federated/run_rl_federated.bat` to activate.</p>
+  </div>
+
+  <svg class="topo-links" preserveAspectRatio="none" id="topoSvg">
+    <!-- Lines connecting server to clients -->
+    <line id="line_0" x1="50%" y1="22%" x2="20%" y2="76%" class="topo-line"></line>
+    <line id="line_1" x1="50%" y1="22%" x2="50%" y2="76%" class="topo-line"></line>
+    <line id="line_2" x1="50%" y1="22%" x2="80%" y2="76%" class="topo-line"></line>
+  </svg>
+  
+  <div id="packet_0" class="topo-packet"></div>
+  <div id="packet_1" class="topo-packet"></div>
+  <div id="packet_2" class="topo-packet"></div>
+
+  <div class="topo-node topo-server" id="nodeServer" style="top:22%;width:260px">
+    <div style="font-family:var(--display);font-size:9px;color:var(--cyan)">Main FL Server</div>
+    <div style="font-size:17px;margin-top:3px;font-weight:700" id="serverState">Offline</div>
+    <div style="font-size:13px;color:var(--muted);margin-top:4px" id="serverDetails">
+      <div>Global Acc: <strong id="srvAcc" style="color:var(--good)">—</strong> · Strategy: FedAvg</div>
+      <div>Endpoint: 0.0.0.0:8080 (gRPC)</div>
+    </div>
+  </div>
+
+  <div class="topo-node topo-client topo-client-0" id="nodeClient_0" style="top:76%;width:180px">
+    <div style="font-family:var(--display);font-size:8px;color:var(--muted)">Client 0 (IoT Edge)</div>
+    <div style="font-size:15px;margin-top:3px;font-weight:700" id="clientState_0">Offline</div>
+    <div style="font-size:12px;color:var(--muted);margin-top:3px" id="clientDetails_0">
+      <div>Samples: <span id="clientSamples_0">4,210</span></div>
+      <div>Weights: <span id="clientSync_0" style="color:var(--good)">Synced</span></div>
+    </div>
+  </div>
+  <div class="topo-node topo-client topo-client-1" id="nodeClient_1" style="top:76%;width:180px">
+    <div style="font-family:var(--display);font-size:8px;color:var(--muted)">Client 1 (IoT Edge)</div>
+    <div style="font-size:15px;margin-top:3px;font-weight:700" id="clientState_1">Offline</div>
+    <div style="font-size:12px;color:var(--muted);margin-top:3px" id="clientDetails_1">
+      <div>Samples: <span id="clientSamples_1">4,210</span></div>
+      <div>Weights: <span id="clientSync_1" style="color:var(--good)">Synced</span></div>
+    </div>
+  </div>
+  <div class="topo-node topo-client topo-client-2" id="nodeClient_2" style="top:76%;width:180px">
+    <div style="font-family:var(--display);font-size:8px;color:var(--muted)">Client 2 (IoT Edge)</div>
+    <div style="font-size:15px;margin-top:3px;font-weight:700" id="clientState_2">Offline</div>
+    <div style="font-size:12px;color:var(--muted);margin-top:3px" id="clientDetails_2">
+      <div>Samples: <span id="clientSamples_2">4,210</span></div>
+      <div>Weights: <span id="clientSync_2" style="color:var(--good)">Synced</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="topo-controls" style="display:none">
+  <button class="btn btn-primary" id="btnSimulateAttack" onclick="simulateAttack()" disabled>Simulate Attack / Traffic</button>
+  <button class="btn" onclick="refresh()" style="background:var(--card2);border-color:var(--border)">⟳ Refresh</button>
+  <div id="simStatus" style="line-height:36px;font-size:14px;color:var(--muted)">Waiting for FL server...</div>
+</div>
+
+<div class="ops-card" style="margin-bottom:16px">
+  <h2>RL feedback → FL sync</h2>
+  <div class="ops-row"><span>Local feedback samples</span><strong id="fbSamples">—</strong></div>
+  <div class="ops-row"><span>Last saved label</span><strong id="fbLast">—</strong></div>
+  <div class="ops-row"><span>FedAvg sync state</span><strong id="syncState">—</strong></div>
+  <div class="ops-row"><span>Last sync finish</span><strong id="syncFinish">—</strong></div>
+  <div class="btn-row" style="margin-top:12px">
+    <button class="btn btn-primary" onclick="triggerSync()">Trigger FedAvg from feedback</button>
+  </div>
+</div>
+
+<div class="grid" id="flHelpGrid">
+  <div class="card" id="flProveCard" style="display:none">
+    <h2><span class="icon">FL</span> How to prove learning</h2>
+    <ol style="margin-left:18px;font-size:14px;line-height:1.6;color:var(--muted)">
+      <li>Note <strong>Global test acc</strong> and a Predict Federated RL confidence.</li>
+      <li>Run <code>federated/run_rl_federated.bat</code> (or offline trainer).</li>
+      <li>Watch client cards move to local_training / fit_done.</li>
+      <li>When rounds finish, GLOBAL acc / round should update.</li>
+      <li>Restart server → Predict Federated RL numbers can change.</li>
+    </ol>
+    <div class="btn-row">
+      <a class="btn btn-primary" href="{{ url_for('predict_page') }}">Open Predict</a>
+      <a class="btn" href="{{ url_for('rl_page') }}">Open RL</a>
+    </div>
+  </div>
+  <div class="card" style="margin-bottom:16px">
+    <h2><span class="icon">LG</span> Status legend</h2>
+    <div class="ops-row" style="border-color:rgba(0,0,0,.1)"><span>RUNNING</span><strong class="ops-good">OS process alive</strong></div>
+    <div class="ops-row" style="border-color:rgba(0,0,0,.1)"><span>FINISHED</span><strong class="ops-warn">Completed training</strong></div>
+    <div class="ops-row" style="border-color:rgba(0,0,0,.1)"><span>OFFLINE</span><strong class="ops-bad">No status / not started</strong></div>
+  </div>
+</div>
+
+<div class="card" style="margin-top:16px">
+  <h2><span class="icon">AI</span> Explain FL (Groq)</h2>
+  <div class="btn-row" style="margin-top:0;margin-bottom:10px">
+    <button class="btn btn-primary" onclick="Aegis.askLlm({mode:'fl'})">Explain GLOBAL vs clients</button>
+  </div>
+  <div class="llm-box">
+    <div class="llm-head">
+      <h3>Plain-language FL</h3>
+    </div>
+    <div class="llm-body" id="llmText">Ask Groq to explain why Predict uses GLOBAL only and how FedAvg learning works.</div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+async function refresh(){
+  try{
+    const [d, s]=await Promise.all([Aegis.fetchLive(), (await fetch('/rlfl_status')).json()]);
+    Aegis.renderFlPanel(d);
+    Aegis.renderVerifyPanel(d);
+    const g=d.federated?.global_model||{};
+    document.getElementById('flGlobalType').textContent=g.is_rl_fl?'Federated RL (GLOBAL)':(g.loaded?'Legacy FL (GLOBAL)':'not loaded');
+    document.getElementById('flPipeline').textContent=g.pipeline||d.federated?.pipeline||'—';
+    document.getElementById('flRound').textContent=g.round!=null?g.round:'—';
+    document.getElementById('flPath').textContent=g.path||'—';
+    const cs=d.federated?.clients_summary||{};
+    document.getElementById('flClientsAlive').textContent=(cs.alive??0)+' / '+(cs.expected??3);
+    document.getElementById('flClientsUsed').innerHTML='<span class="ops-bad">NO — Predict uses GLOBAL only</span>';
+    const box=document.getElementById('flClientStates');
+    if(box){
+      box.innerHTML=(cs.states||[]).map(s=>
+        `<div class="ops-row"><span>Client ${s.id} ${s.alive?'(alive)':'(offline)'}</span><strong>${s.state||'—'}${s.train_acc!=null?' · acc '+(s.train_acc*100).toFixed(1)+'%':''}</strong></div>`
+      ).join('')||'<div style="color:var(--ops-muted);font-size:13px">No client status yet</div>';
+    }
+    const last=d.federated?.last_inference;
+    document.getElementById('flLast').textContent=last
+      ? `${last.prediction} (${(last.confidence*100).toFixed(0)}%) · ${last.source||'GLOBAL'}` : 'none yet — run Predict';
+    document.getElementById('fbSamples').textContent=s.feedback?.samples ?? 0;
+    document.getElementById('fbLast').textContent=s.feedback?.last_true_label || '—';
+    document.getElementById('syncState').textContent=s.sync?.running ? 'RUNNING' : (s.sync?.last_result || 'idle');
+    document.getElementById('syncFinish').textContent=s.sync?.last_finished_at || '—';
+    document.getElementById('liveChip').textContent='FL monitor';
+    
+    // UPDATE TOPOLOGY
+    const topoOverlay = document.getElementById('topoOverlay');
+    const nodeServer = document.getElementById('nodeServer');
+    const serverState = document.getElementById('serverState');
+    
+    // Determine if server is running based on status.json state
+    const srv = d.federated && d.federated.server ? d.federated.server : {};
+    const validStates = ['connecting', 'waiting_for_clients', 'fitting', 'round_complete', 'finished'];
+    const isRunning = validStates.includes(srv.state) || (d.federated && d.federated.global_model_loaded);
+    
+    const acc = (g.test_acc != null ? g.test_acc : srv.global_test_acc);
+    if(document.getElementById('srvAcc')) {
+      document.getElementById('srvAcc').textContent = acc != null ? (acc * 100).toFixed(1) + '%' : '—';
+    }
+
+    if (isRunning) {
+      topoOverlay.style.opacity = '0';
+      setTimeout(() => topoOverlay.style.pointerEvents = 'none', 500);
+      nodeServer.classList.add('active');
+      serverState.textContent = srv.state === 'finished' ? 'Finished (Round ' + (g.round||0) + ')' : 'Running (Round ' + (g.round||0) + ')';
+    } else {
+      topoOverlay.style.opacity = '1';
+      topoOverlay.style.pointerEvents = 'all';
+      nodeServer.classList.remove('active');
+      serverState.textContent = 'Offline';
+    }
+    
+    // Update clients in topology
+    const states = cs.states || [];
+    for(let i=0; i<3; i++){
+      const cnode = document.getElementById('nodeClient_'+i);
+      const cstate = document.getElementById('clientState_'+i);
+      const csamples = document.getElementById('clientSamples_'+i);
+      const csync = document.getElementById('clientSync_'+i);
+      const s = states.find(x => x.id === i);
+      
+      if(s && s.n_samples != null && csamples) {
+        csamples.textContent = Number(s.n_samples).toLocaleString();
+      }
+      
+      if(s && s.alive) {
+        cnode.classList.add('active');
+        const stName = s.state ? (s.state.charAt(0).toUpperCase() + s.state.slice(1)) : 'Alive';
+        cstate.textContent = stName;
+        if(csync) csync.textContent = stName === 'Fitting' ? 'Training...' : 'Synced';
+      } else if (s && s.state && s.state !== 'offline') {
+        cnode.classList.add('active');
+        cstate.textContent = s.state.charAt(0).toUpperCase() + s.state.slice(1);
+        if(csync) csync.textContent = 'Synced';
+      } else {
+        cnode.classList.remove('active');
+        cstate.textContent = 'Offline';
+        if(csync) csync.textContent = 'Offline';
+      }
+    }
+  }catch(e){
+    const el = document.getElementById('flProcMeta') || document.getElementById('flGlobal');
+    if(el) el.textContent = 'Could not reach /live API';
+  }
+}
+
+async function simulateAttack() {
+  const btn = document.getElementById('btnSimulateAttack');
+  const simStatus = document.getElementById('simStatus');
+  btn.disabled = true;
+  simStatus.textContent = 'Fetching sample...';
+  
+  try {
+    const sres = await fetch('/sample');
+    const sample = await sres.json();
+    if(sample.error) throw new Error(sample.error);
+    
+    simStatus.textContent = 'Routing to client...';
+    const res = await fetch('/simulate_client_attack', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({features: sample.features})
+    });
+    const data = await res.json();
+    if(data.error) throw new Error(data.error);
+    
+    const cid = data.client_id;
+    const cnode = document.getElementById('nodeClient_' + cid);
+    const line = document.getElementById('line_' + cid);
+    const packet = document.getElementById('packet_' + cid);
+    const snode = document.getElementById('nodeServer');
+    
+    // Clear previous attack blinks
+    document.querySelectorAll('.topo-client').forEach(c => c.classList.remove('attacked'));
+
+    simStatus.textContent = `Client ${cid} analyzing traffic...`;
+    
+    packet.classList.remove('attack');
+    line.classList.add('active');
+    packet.style.animation = 'none';
+    packet.offsetHeight; // reflow
+    packet.style.animation = `flowDown${cid} 1s forwards ease-in-out`;
+    
+    setTimeout(() => {
+      if (data.is_attack) {
+        simStatus.innerHTML = `Client ${cid} Local RL detected Attack: <strong>${data.prediction}</strong> (${(data.confidence*100).toFixed(0)}%)`;
+        cnode.classList.add('attacked'); // Continuous retro red blinking!
+        
+        setTimeout(() => {
+           simStatus.textContent = `Local RL trained -> Sending RL weights to FL Server...`;
+           packet.classList.add('attack');
+           packet.style.animation = 'none';
+           packet.offsetHeight; // reflow
+           packet.style.animation = `flowUp${cid} 1.5s forwards ease-in-out`;
+           
+           setTimeout(() => {
+             snode.classList.add('receiving');
+             simStatus.textContent = `Server received RL weights from Client ${cid} for FedAvg! Client ${cid} blinks continuously.`;
+             
+             setTimeout(() => {
+               snode.classList.remove('receiving');
+               line.classList.remove('active');
+               btn.disabled = false;
+               simStatus.textContent = 'Ready for simulation (Client ' + cid + ' blinking)';
+               refresh();
+             }, 2500);
+           }, 1500);
+        }, 1200);
+      } else {
+        simStatus.textContent = `Client ${cid} processed Benign traffic.`;
+        setTimeout(() => {
+           line.classList.remove('active');
+           btn.disabled = false;
+           simStatus.textContent = 'Ready for simulation';
+        }, 1200);
+      }
+    }, 1000);
+    
+  } catch(e) {
+    simStatus.textContent = 'Error: ' + e.message;
+    btn.disabled = false;
+  }
+}
+async function triggerSync(){
+  const r=await fetch('/rlfl_trigger',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({reason:'manual_fl_page'})});
+  const d=await r.json();
+  Aegis.toast(d.started?'FedAvg cycle started':'FedAvg already running', !!d.error);
+  refresh();
+}
+refresh();
+setInterval(refresh, 2500);
+</script>
+{% endblock %}

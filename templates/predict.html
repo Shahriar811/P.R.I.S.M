@@ -1,0 +1,779 @@
+{% extends "base.html" %}
+{% block title %}Predict — P.R.I.S.M{% endblock %}
+{% block content %}
+<section class="page-hero">
+  <div class="badge"><span class="dot"></span> Attack prediction</div>
+  <h1>Predict</h1>
+  <p style="display:none">XGBoost is the primary detector. Side panels compare <strong>local RL</strong> vs the <strong>GLOBAL federated RL</strong> (never a single client model).</p>
+</section>
+
+
+<div class="card" id="predictVerifyCard" style="margin-bottom:16px;display:none">
+  <h2><span class="icon">OK</span> RL → FL verification</h2>
+  <div class="verify-grid" id="verifyGrid">
+    <div class="verify-item warn"><span class="mark">…</span><div><div class="v-title">Loading status…</div></div></div>
+  </div>
+</div>
+  <div class="card">
+    <h2><span class="icon">IN</span> Input</h2>
+    <h3 class="admin-only">Active detector</h3>
+    <div class="locked-model admin-only">
+      <div>Best model locked: <strong id="bestLabel">XGBoost</strong></div>
+      <span class="pill-live">ONLY MODEL</span>
+    </div>
+    <h3>Flow features</h3>
+    <p style="font-size:13.5px;color:var(--muted);margin-bottom:8px">Enter <span id="nFeatLabel">42</span> comma-separated values, or upload a CSV.</p>
+    <textarea id="feat" placeholder="0.12, 0.0, 3.4, 1.0, …"></textarea>
+    <div class="feat-counter">
+      <span>Features: <span id="featCount" class="bad">0</span> / <span id="featTotal">42</span></span>
+      <button type="button" class="btn" style="padding:5px 12px;font-size:12px" onclick="toggleColumns()">Columns</button>
+    </div>
+    <div id="featList" class="feat-list"></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="predictBtn" onclick="predictText()">Predict</button>
+      <button class="btn admin-only" id="sampleBtn" onclick="fillSample()">Sample</button>
+      <button class="btn" onclick="clearInput()">Clear</button>
+    </div>
+    <h3>Batch CSV</h3>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:6px">Upload a CSV flow vector file (&le; 1 MB limit).</p>
+    <input type="file" id="file" accept=".csv" style="margin-bottom:10px">
+    <button class="btn" onclick="predictFile()">Analyze CSV</button>
+  </div>
+
+  <div class="card">
+    <h2><span class="icon">OUT</span> Result</h2>
+    <div class="loader" id="loader"><div class="spinner"></div> Running threat analysis…</div>
+    <div class="pred-panel" id="predPanel">
+      <div class="result-grid">
+        <div class="res-col">
+          <div class="pred-label admin-only">Detected class (best model)</div>
+          <div class="pred-label user-only">Detected Threat</div>
+          <div class="pred-result" id="pred">—</div>
+          <div class="conf-bar-wrap">
+            <div class="conf-label"><span>Confidence</span><span id="confPct">0%</span></div>
+            <div class="conf-track"><div class="conf-fill" id="confFill"></div></div>
+          </div>
+          <div id="threatBadge"></div>
+          <div class="status-strip" id="modelReadyStrip" style="display:none">
+            <span id="readyXgb">XGBoost: …</span>
+            <span id="readyRl">Local RL: …</span>
+            <span id="readyFl">Federated RL: …</span>
+            <span id="readyLlm">Groq LLM: …</span>
+          </div>
+          <div class="dual-row admin-only">
+            <div class="mini">
+              <div class="lbl">Local RL <span class="source-pill local">Section 10</span></div>
+              <div class="val" id="rlPredVal">—</div>
+              <div style="font-size:14px;color:var(--muted);margin-top:4px">Private/local checkpoint</div>
+            </div>
+            <div class="mini">
+              <div class="lbl">Federated RL <span class="source-pill global">GLOBAL</span></div>
+              <div class="val" id="flPredVal">—</div>
+              <div style="font-size:14px;color:var(--muted);margin-top:4px" id="flSourceLine">Source: GLOBAL model</div>
+            </div>
+          </div>
+          <div class="mini admin-only" style="margin-top:10px;display:none" id="flMetaBox">
+            <div class="lbl">Connection &amp; learning proof</div>
+            <div id="flRlMeta" style="margin-top:6px;font-size:16px;color:var(--muted);line-height:1.35">—</div>
+            <div id="compareLine" style="margin-top:8px;font-size:17px;color:var(--text)"></div>
+          </div>
+          <div class="mini admin-only" style="margin-top:10px;display:none" id="novelBox">
+            <div class="lbl">New attack / domain-shift watch</div>
+            <div id="novelMsg" style="margin-top:6px;font-size:16px;color:var(--muted);line-height:1.35">Run Predict to evaluate whether this flow looks novel.</div>
+            <div id="novelReasons" style="margin-top:8px;font-size:15px;color:var(--text)"></div>
+          </div>
+          <canvas id="probChart" height="150" style="margin-top:14px"></canvas>
+        </div>
+
+        <div class="res-col">
+          <div class="xai-panel" id="xaiPanel">
+            <div class="xai-head">
+              <h3>Why this prediction? (XAI)</h3>
+              <span class="xai-method" id="xaiMethod"></span>
+            </div>
+            <div class="xai-summary" id="xaiSummary"></div>
+            <div id="xaiBars"></div>
+          </div>
+          <div class="llm-box show" id="llmBox" style="margin-top:12px">
+            <div class="llm-head">
+              <h3>Plain-language explanation</h3>
+            </div>
+            <div class="llm-body" id="llmText">Run Predict — plain English explanation will appear here.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="btn-row" id="predictNavRow" style="display:none">
+      <a class="btn" href="{{ url_for('fl_page') }}">Open FL page (global vs clients)</a>
+      <a class="btn" href="{{ url_for('rl_page') }}">Open RL page</a>
+      <a class="btn" href="{{ url_for('history_page') }}">View history</a>
+    </div>
+  </div>
+</div>
+
+<div class="advisor-card" id="advisorCard">
+  <div class="advisor-header">
+    <h2><span class="icon">💬</span> AI Security Advisor</h2>
+  </div>
+
+  <p style="font-size:15px;color:var(--muted);margin-bottom:12px;line-height:1.45">
+    Ask the AI Security Advisor for actionable containment steps, firewall/SDN flow rules, SOC escalation playbooks, and organizational policies tailored to the detected attack.
+  </p>
+
+  <div class="advisor-chat-window" id="advisorChatWindow">
+    <div class="chat-msg assistant">
+      <div class="chat-bubble-author"><span class="hb on"></span> P.R.I.S.M AI SECURITY ADVISOR</div>
+      <div class="chat-bubble-content">
+        <p>Hello! I am your AI Security &amp; Incident Response Advisor. Run a traffic prediction or ask me any question below about how to contain, mitigate, and establish organizational guidelines for network attacks.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="chat-input-row">
+    <textarea id="advisorInput" placeholder="Ask how to mitigate this attack, configure firewall rules, or draft organizational guidelines..." onkeydown="handleAdvisorKey(event)"></textarea>
+    <button type="button" class="btn btn-primary" id="advisorSendBtn" onclick="sendAdvisorChat()">Send</button>
+    <button type="button" class="btn" onclick="clearAdvisorChat()">Clear</button>
+  </div>
+</div>
+
+<div class="card admin-only" id="predTopoCard" style="margin-top:16px">
+  <h2><span class="icon">TP</span> Live Federated Topology (Server ↔ 3 Clients)</h2>
+  <div style="font-size:16px;color:var(--muted);margin-bottom:12px">
+    Watch which client process receives the prediction flow. When an attack occurs, the targeted client detects it via local RL and sends weights to the main FL server.
+  </div>
+
+  <div class="topology-container" id="topoContainer">
+    <svg class="topo-links" preserveAspectRatio="none" id="topoSvg">
+      <line id="line_0" x1="50%" y1="25%" x2="20%" y2="75%" class="topo-line"></line>
+      <line id="line_1" x1="50%" y1="25%" x2="50%" y2="75%" class="topo-line"></line>
+      <line id="line_2" x1="50%" y1="25%" x2="80%" y2="75%" class="topo-line"></line>
+    </svg>
+    
+    <div id="packet_0" class="topo-packet"></div>
+    <div id="packet_1" class="topo-packet"></div>
+    <div id="packet_2" class="topo-packet"></div>
+
+    <div class="topo-node topo-server active" id="nodeServer">
+      <div style="font-family:var(--display);font-size:9px;color:var(--muted)">Main Server</div>
+      <div style="font-size:16px;margin-top:4px" id="serverState">FL Server</div>
+    </div>
+
+    <div class="topo-node topo-client topo-client-0 active" id="nodeClient_0">
+      <div style="font-family:var(--display);font-size:8px;color:var(--muted)">Client 0</div>
+      <div style="font-size:16px;margin-top:4px" id="clientState_0">Ready</div>
+    </div>
+    <div class="topo-node topo-client topo-client-1 active" id="nodeClient_1">
+      <div style="font-family:var(--display);font-size:8px;color:var(--muted)">Client 1</div>
+      <div style="font-size:16px;margin-top:4px" id="clientState_1">Ready</div>
+    </div>
+    <div class="topo-node topo-client topo-client-2 active" id="nodeClient_2">
+      <div style="font-family:var(--display);font-size:8px;color:var(--muted)">Client 2</div>
+      <div style="font-size:16px;margin-top:4px" id="clientState_2">Ready</div>
+    </div>
+  </div>
+  <div id="topoStatus" style="font-size:17px;color:var(--muted);text-align:center;margin-top:8px">
+    Run a prediction to animate traffic routing and client attack detection live!
+  </div>
+</div>
+
+<div class="card admin-only" id="learnCard" style="margin-top:16px">
+  <h2><span class="icon">CL</span> Teach the RL agent (continual learning)</h2>
+  <p style="font-size:13px;color:var(--muted);margin-bottom:12px;line-height:1.5">
+    Turn learning <strong>ON</strong>, then confirm or correct a prediction. The live DQN-Improved learner updates immediately for serving,
+    saves new-attack samples to the local FL shard, and can trigger a Flower FedAvg sync to improve the GLOBAL model.
+  </p>
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap">
+    <span style="font-size:13px;font-weight:650">Continual learning:</span>
+    <button type="button" class="btn learn-toggle" id="learnToggleBtn" onclick="toggleLearning()">OFF</button>
+    <button type="button" class="btn" style="padding:7px 12px" onclick="saveLearned()">Save weights</button>
+    <button type="button" class="btn" style="padding:7px 12px" onclick="triggerFederatedSync()">Trigger FedAvg now</button>
+    <span id="learnStatus" style="color:var(--muted);font-size:13px"></span>
+  </div>
+  <div class="setting-block" style="margin-bottom:14px">
+    <h3 style="margin-bottom:10px">RL ↔ FL sync controls</h3>
+    <div class="opt-row"><span>Auto-save new attack samples</span><label class="toggle"><input type="checkbox" id="autoSaveNew" onchange="saveRlflSettings()"><span class="slider"></span></label></div>
+    <div class="opt-row"><span>Auto-trigger FedAvg after saved feedback</span><label class="toggle"><input type="checkbox" id="autoFederate" onchange="saveRlflSettings()"><span class="slider"></span></label></div>
+    <div class="opt-row"><span>Flag disagreement as new attack candidate</span><label class="toggle"><input type="checkbox" id="flagNovel" onchange="saveRlflSettings()"><span class="slider"></span></label></div>
+    <div class="opt-row"><span>Novelty confidence threshold</span><strong id="novelThreshLabel">0.70</strong></div>
+    <input type="range" id="novelThresh" min="0.50" max="0.95" step="0.01" value="0.70" oninput="onNovelThresh(this.value)">
+    <div id="syncStatus" style="margin-top:10px;font-size:13px;color:var(--muted);line-height:1.45">Sync status loading…</div>
+  </div>
+  <div id="correctBox" class="correct-box disabled">
+    <div style="font-size:13px;color:var(--muted);margin-bottom:10px">
+      After Predict: confirm if correct, or pick the true class so RL can learn and save this flow as a possible new-attack/domain-shift example.
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+      <button type="button" class="btn btn-primary" id="confirmBtn" onclick="confirmPrediction()">Correct</button>
+      <span style="font-size:12px;color:var(--muted)">or actually:</span>
+      <span id="classBtns"></span>
+    </div>
+    <div style="margin-top:10px;font-size:13px;color:var(--muted)">
+      <label><input type="checkbox" id="saveAsNewChk"> Save this flow into the local new-attack / domain-shift feedback shard</label>
+    </div>
+    <div id="learnMsg" style="margin-top:12px;font-size:13px;color:var(--muted);line-height:1.45"></div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+let chart, featureCols=[], bestModel='XGBoost';
+
+function toggleColumns(){document.getElementById('featList').classList.toggle('show')}
+function updateFeatCount(){
+  const v=document.getElementById('feat').value;
+  const vals=v.split(',').map(x=>x.trim()).filter(x=>x!==''&&!isNaN(parseFloat(x)));
+  const n=vals.length, total=featureCols.length||42;
+  const el=document.getElementById('featCount');
+  el.textContent=n; el.className=n===total?'ok':'bad';
+}
+document.getElementById('feat').addEventListener('input', updateFeatCount);
+
+function showResult(d){
+  document.getElementById('loader').classList.remove('show');
+  document.getElementById('predPanel').style.opacity='1';
+  const pred=document.getElementById('pred');
+  pred.innerText=d.prediction;
+  pred.className='pred-result '+Aegis.threatClass(d.prediction);
+  const conf=d.confidence*100;
+  document.getElementById('confPct').textContent=conf.toFixed(1)+'%';
+  document.getElementById('confFill').style.width=conf+'%';
+  const t=Aegis.THREAT[d.prediction];
+  const thresh=Aegis.loadSettings().alertThreshold;
+  const badge=document.getElementById('threatBadge');
+  if(t){
+    const cls=t.level==='low'?'threat-low':t.level==='med'?'threat-med':'threat-high';
+    const alert=conf>=thresh&&t.level!=='low';
+    badge.innerHTML=`<div class="threat-badge ${cls}">${alert?'ALERT — ':'✓ '}${t.desc}</div>`;
+    if(alert) Aegis.playAlertSound(false);
+  } else badge.innerHTML='';
+
+  document.getElementById('rlPredVal').textContent=d.rl?.primary
+    ? d.rl.primary.action+' ('+(d.rl.primary.confidence*100).toFixed(0)+'%)' : 'not loaded';
+  document.getElementById('flPredVal').textContent=d.fl
+    ? d.fl.prediction+' ('+(d.fl.confidence*100).toFixed(0)+'%)' : 'not loaded';
+
+  const flMeta=document.getElementById('flRlMeta');
+  const compare=document.getElementById('compareLine');
+  const srcLine=document.getElementById('flSourceLine');
+  if(d.fl){
+    const pipe=d.fl.pipeline||d.proof?.pipeline||'RL -> FL';
+    const arch=d.fl.architecture||'—';
+    const src=d.fl.source||'GLOBAL_FEDERATED_MODEL';
+    if(srcLine){
+      srcLine.textContent='Source: '+src+' · round '+(d.fl.round!=null?d.fl.round:'?')+
+        ' · '+(d.fl.is_rl_fl?'RL-Dueling FedAvg':'legacy FL');
+    }
+    flMeta.innerHTML=
+      '<strong>'+pipe+'</strong> · arch <strong>'+arch+'</strong><br>'+
+      (d.fl.source_note||'Predict uses the GLOBAL averaged RL model only.')+
+      '<br><span style="color:var(--muted)">Federated learning happens during FL rounds. Use the Teach panel below for live RL corrections.</span>';
+    if(compare && d.rl?.primary){
+      const same=d.rl.primary.action===d.fl.prediction;
+      const lc=(d.rl.primary.confidence*100).toFixed(0);
+      const fc=(d.fl.confidence*100).toFixed(0);
+      compare.innerHTML=same
+        ? 'Local RL and GLOBAL FL agree on <strong>'+d.fl.prediction+'</strong> (local '+lc+'% vs global '+fc+'%). Different confidences mean they are different models — expected.'
+        : 'Local RL says <strong>'+d.rl.primary.action+'</strong>, GLOBAL FL says <strong>'+d.fl.prediction+'</strong> — still OK; global is the FedAvg of client RL weights.';
+    }
+  } else {
+    if(srcLine) srcLine.textContent='Federated GLOBAL model not loaded';
+    flMeta.textContent='Train Section 10, then run federated/run_rl_federated.bat (or offline trainer), restart server.';
+    if(compare) compare.textContent='';
+  }
+  const novelMsg=document.getElementById('novelMsg');
+  const novelReasons=document.getElementById('novelReasons');
+  const saveChk=document.getElementById('saveAsNewChk');
+  window._lastNovelCandidate=!!d.novelty?.candidate;
+  if(saveChk) saveChk.checked=window._lastNovelCandidate || !!document.getElementById('autoSaveNew')?.checked;
+  if(d.novelty?.candidate){
+    if(novelMsg) novelMsg.innerHTML='<strong>Candidate detected.</strong> '+(d.novelty.message||'');
+    if(novelReasons) novelReasons.innerHTML='Reasons: <strong>'+((d.novelty.reasons||[]).join(', ')||'heuristic')+'</strong>';
+  } else {
+    if(novelMsg) novelMsg.textContent=d.novelty?.message||'Looks similar to known training distribution.';
+    if(novelReasons) novelReasons.textContent='No novelty flags on this prediction.';
+  }
+  window._lastPrediction=d.prediction;
+  window._lastConfidence=d.confidence;
+  window._lastRlAction=d.rl?.primary?.action;
+  window._lastFlAction=d.fl?.prediction;
+  if(window._lastLive) Aegis.renderVerifyPanel(window._lastLive, d);
+
+  const ctx=document.getElementById('probChart');
+  if(chart) chart.destroy();
+  const colors=d.classes.map(c=>Aegis.THREAT[c]?.color||'#2a6f6a');
+  chart=new Chart(ctx,{type:'bar',
+    data:{labels:d.classes,datasets:[{data:d.proba,backgroundColor:colors,borderRadius:6,borderWidth:0}]},
+    options:{animation:{duration:500},scales:{y:{beginAtZero:true,max:1,ticks:{callback:v=>(v*100).toFixed(0)+'%'}},x:{grid:{display:false}}},plugins:{legend:{display:false}}}});
+
+  Aegis.pushHistory({
+    pred:d.prediction, conf, model:d.model, time:new Date().toLocaleString(),
+    rl:d.rl?.primary?.action, fl:d.fl?.prediction
+  });
+  explainCurrent();
+  enableCorrection(d);
+  if (d.client_id != null) animatePredictionTopology(d);
+}
+
+function animatePredictionTopology(d) {
+  const cid = d.client_id;
+  const isAttack = d.prediction !== 'Benign';
+  const cnode = document.getElementById('nodeClient_' + cid);
+  const cstate = document.getElementById('clientState_' + cid);
+  const line = document.getElementById('line_' + cid);
+  const packet = document.getElementById('packet_' + cid);
+  const snode = document.getElementById('nodeServer');
+  const statusEl = document.getElementById('topoStatus');
+  
+  if(!cnode || !packet) return;
+
+  // Reset previous attacked blinking states
+  document.querySelectorAll('.topo-client').forEach(c => c.classList.remove('attacked'));
+  for(let i=0; i<3; i++) {
+    const cs = document.getElementById('clientState_' + i);
+    if(cs) cs.textContent = 'Ready';
+  }
+
+  statusEl.textContent = `Routing flow vector to Client ${cid}...`;
+  
+  packet.classList.remove('attack');
+  line.classList.add('active');
+  packet.style.animation = 'none';
+  packet.offsetHeight; // reflow
+  packet.style.animation = `flowDown${cid} 1s forwards ease-in-out`;
+  
+  setTimeout(() => {
+    if (isAttack) {
+      statusEl.innerHTML = `⚠️ Traffic routed to <strong>Client ${cid}</strong>! Local RL detected Attack: <strong>${d.prediction}</strong> (${(d.confidence*100).toFixed(0)}%)`;
+      cnode.classList.add('attacked'); // Starts continuous retro red blinking!
+      cstate.textContent = 'ATTACKED: ' + d.prediction;
+      
+      setTimeout(() => {
+         statusEl.textContent = `Client ${cid} training Local RL -> Sending RL weights to Main Server for FedAvg...`;
+         packet.classList.add('attack');
+         packet.style.animation = 'none';
+         packet.offsetHeight; // reflow
+         packet.style.animation = `flowUp${cid} 1.5s forwards ease-in-out`;
+         
+         setTimeout(() => {
+           snode.classList.add('receiving');
+           statusEl.innerHTML = `✓ Main Server received RL weight update from <strong>Client ${cid}</strong>! Client ${cid} continues blinking (ATTACKED).`;
+           
+           setTimeout(() => {
+             snode.classList.remove('receiving');
+             line.classList.remove('active');
+             // Keeps cnode blinking continuously!
+           }, 2000);
+         }, 1500);
+      }, 1200);
+    } else {
+      statusEl.innerHTML = `✓ Traffic routed to <strong>Client ${cid}</strong>: Classified as <strong>Benign</strong>.`;
+      cstate.textContent = 'Benign';
+      setTimeout(() => {
+         line.classList.remove('active');
+         statusEl.textContent = 'Ready for next prediction.';
+      }, 1500);
+    }
+  }, 1000);
+}
+
+function explainCurrent(){
+  const inp=window._lastInput; if(!inp) return;
+  document.getElementById('xaiPanel').classList.add('show');
+  document.getElementById('xaiBars').innerHTML='<div style="color:var(--muted);font-size:13px">Computing SHAP…</div>';
+  fetch('/explain',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({features:inp.features})})
+   .then(r=>r.json()).then(x=>{
+     if(x.error){document.getElementById('xaiBars').innerHTML=x.error;explainWithLlm(inp.features,null);return;}
+     const maxAbs=Math.max.apply(null,x.contributions.map(c=>Math.abs(c.impact)))||1;
+     document.getElementById('xaiMethod').textContent=x.method||'XAI';
+     document.getElementById('xaiSummary').innerHTML='Classified as <strong>'+x.prediction+'</strong> ('+(x.confidence*100).toFixed(1)+'%).';
+     document.getElementById('xaiBars').innerHTML=x.contributions.map(c=>{
+       const w=Math.abs(c.impact)/maxAbs*100; const tw=c.impact>0;
+       return '<div class="xb-row"><div class="xb-name">'+c.feature+'</div><div class="xb-track"><div class="xb-fill '+(tw?'tw':'aw')+'" style="width:'+w.toFixed(1)+'%"></div></div><div class="xb-val">'+(tw?'+':'')+c.impact.toFixed(2)+'</div></div>';
+     }).join('');
+     explainWithLlm(inp.features, x.contributions||[]);
+   }).catch(()=>{
+     document.getElementById('xaiBars').innerHTML='SHAP unavailable.';
+     explainWithLlm(inp.features,null);
+   });
+}
+
+function explainWithLlm(features, contributions){
+  const body={mode:'predict', features};
+  if(contributions) body.contributions=contributions;
+  Aegis.askLlm(body);
+}
+
+async function predictText(){
+  Aegis.unlockAudio();
+  const v=document.getElementById('feat').value.split(',').map(x=>parseFloat(x.trim())).filter(x=>!isNaN(x));
+  window._lastInput={features:v};
+  document.getElementById('loader').classList.add('show');
+  document.getElementById('predPanel').style.opacity='.4';
+  document.getElementById('predictBtn').disabled=true;
+  try{
+    const r=await fetch('/predict',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({features:v})});
+    const d=await r.json();
+    if(d.error){Aegis.toast(d.error,true);document.getElementById('loader').classList.remove('show');return}
+    showResult(d);
+  }catch(e){Aegis.toast('Prediction failed: '+e.message,true)}
+  finally{document.getElementById('predictBtn').disabled=false}
+}
+
+async function predictFile(){
+  const f=document.getElementById('file').files[0];
+  if(!f){Aegis.toast('Choose a CSV file first',true);return}
+  if(f.size > 1024 * 1024){
+    Aegis.toast('File size exceeds 1 MB limit. Please select a smaller CSV file.', true);
+    return;
+  }
+  document.getElementById('xaiPanel').classList.remove('show');
+  const fd=new FormData(); fd.append('file',f);
+  document.getElementById('loader').classList.add('show');
+  try{
+    const r=await fetch('/predict_csv',{method:'POST',body:fd});
+    const d=await r.json();
+    if(d.error){Aegis.toast(d.error,true);return}
+    document.getElementById('loader').classList.remove('show');
+    document.getElementById('pred').innerText=d.total+' flows';
+    document.getElementById('pred').className='pred-result';
+    document.getElementById('confPct').textContent=d.counts.map(c=>c.label+': '+c.n).join(' · ');
+    document.getElementById('confFill').style.width='0';
+    document.getElementById('threatBadge').innerHTML=`<div class="threat-badge threat-med">Batch analysis complete (${d.model})</div>`;
+    if(d.rl_sample?.primary) document.getElementById('rlPredVal').textContent=d.rl_sample.primary.action;
+    if(d.fl_sample) document.getElementById('flPredVal').textContent=d.fl_sample.prediction;
+    Aegis.toast('Analyzed '+d.total+' flows');
+    Aegis.askLlm({mode:'batch', counts:d.counts, total:d.total, model:d.model});
+  }catch(e){Aegis.toast('CSV analysis failed',true)}
+  finally{document.getElementById('loader').classList.remove('show')}
+}
+
+async function fillSample(){
+  try{
+    const r=await fetch('/sample');
+    const d=await r.json();
+    if(d.error){Aegis.toast(d.error,true);return}
+    document.getElementById('feat').value=d.features.map(x=>Number(x).toFixed(6)).join(', ');
+    updateFeatCount();
+    window._sampleTrueIndex=(d.true_index!=null)?d.true_index:null;
+    const hint=d.true_label?`Sample: real ${d.true_label} flow (continual label ready)`:`Sample: ${d.source||'random'}`;
+    Aegis.toast(hint);
+  }catch(e){
+    window._sampleTrueIndex=null;
+    // local fallback if API fails
+    const n=featureCols.length||42;
+    const profile=['sparse','burst','heavy','probe','mixed'][Math.floor(Math.random()*5)];
+    const vals=Array.from({length:n},(_,i)=>{
+      const u=Math.random();
+      if(profile==='sparse') return (u>0.35?Math.abs(0.05+randn()*0.04):Math.abs(0.4+randn()*0.2));
+      if(profile==='burst') return Math.min(5, Math.exp(-0.5+randn()*0.9));
+      if(profile==='heavy') return Math.abs(0.55+randn()*0.25);
+      if(profile==='probe') return (i%3?Math.random()*0.25:0.3+Math.random()*0.6);
+      return Math.abs(0.3+randn()*0.35);
+    });
+    document.getElementById('feat').value=vals.map(x=>x.toFixed(6)).join(', ');
+    updateFeatCount();
+    Aegis.toast('Sample: local '+profile);
+  }
+}
+function randn(){ // Box-Muller
+  let u=0,v=0; while(u===0)u=Math.random(); while(v===0)v=Math.random();
+  return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+}
+function clearInput(){
+  document.getElementById('feat').value='';
+  window._sampleTrueIndex=null;
+  updateFeatCount();
+}
+
+/* ---- Continual learning (ON/OFF + corrections) ---- */
+let _learningOn=false;
+let _rlflSettings=null;
+async function refreshLearnStatus(){
+  try{
+    const s=await (await fetch('/rl_learn_status')).json();
+    _learningOn=!!s.learning;
+    const b=document.getElementById('learnToggleBtn');
+    if(b){
+      b.textContent=_learningOn?'ON':'OFF';
+      b.classList.toggle('on',_learningOn);
+    }
+    const acc=(s.recent_accuracy==null)?'—':(s.recent_accuracy*100).toFixed(0)+'%';
+    const el=document.getElementById('learnStatus');
+    if(el) el.textContent=`updates: ${s.n_updates} · memory: ${s.replay_size} · recent acc: ${acc}`;
+  }catch(e){}
+}
+async function refreshRlflStatus(){
+  try{
+    const s=await (await fetch('/rlfl_status')).json();
+    _rlflSettings=s.settings||{};
+    const autoSave=document.getElementById('autoSaveNew');
+    const autoFed=document.getElementById('autoFederate');
+    const flagNovel=document.getElementById('flagNovel');
+    const th=document.getElementById('novelThresh');
+    const thLab=document.getElementById('novelThreshLabel');
+    if(autoSave) autoSave.checked=!!_rlflSettings.auto_save_new;
+    if(autoFed) autoFed.checked=!!_rlflSettings.auto_federate;
+    if(flagNovel) flagNovel.checked=!!_rlflSettings.flag_disagreement_as_novel;
+    if(th) th.value=Number(_rlflSettings.novelty_threshold||0.7).toFixed(2);
+    if(thLab) thLab.textContent=Number(_rlflSettings.novelty_threshold||0.7).toFixed(2);
+    const fb=s.feedback||{};
+    const sync=s.sync||{};
+    const msg=[
+      `Local feedback samples: ${fb.samples??0}`,
+      `Last label: ${fb.last_true_label||'—'}`,
+      `FedAvg sync: ${sync.running?'RUNNING':(sync.last_result||'idle')}`,
+      sync.last_finished_at?`Last finish: ${sync.last_finished_at}`:''
+    ].filter(Boolean).join(' · ');
+    const box=document.getElementById('syncStatus');
+    if(box) box.textContent=msg;
+  }catch(e){}
+}
+async function saveRlflSettings(){
+  const body={
+    auto_save_new: !!document.getElementById('autoSaveNew')?.checked,
+    auto_federate: !!document.getElementById('autoFederate')?.checked,
+    flag_disagreement_as_novel: !!document.getElementById('flagNovel')?.checked,
+    novelty_threshold: parseFloat(document.getElementById('novelThresh')?.value||'0.70'),
+  };
+  await fetch('/rlfl_settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  await refreshRlflStatus();
+  Aegis.toast('RL↔FL sync settings updated');
+}
+function onNovelThresh(v){
+  const el=document.getElementById('novelThreshLabel');
+  if(el) el.textContent=Number(v).toFixed(2);
+}
+async function triggerFederatedSync(){
+  try{
+    const r=await fetch('/rlfl_trigger',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({reason:'manual_predict_page'})});
+    const d=await r.json();
+    if(d.error){Aegis.toast(d.error,true);return}
+    Aegis.toast(d.started?'FedAvg cycle started':'FedAvg already running');
+    refreshRlflStatus();
+  }catch(e){Aegis.toast('Could not start FedAvg cycle',true)}
+}
+async function toggleLearning(){
+  const on=!_learningOn;
+  await fetch('/rl_learning_toggle',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({on})});
+  await refreshLearnStatus();
+  Aegis.toast(on?'Continual learning ON — corrections will train RL':'Continual learning OFF — corrections only recorded');
+}
+async function saveLearned(){
+  try{
+    const r=await fetch('/rl_learn_save',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+    const d=await r.json();
+    if(d.error){Aegis.toast(d.error,true);return}
+    Aegis.toast('Saved: '+(d.path||'weights'));
+  }catch(e){Aegis.toast('Save failed',true)}
+}
+function buildClassButtons(classes){
+  const wrap=document.getElementById('classBtns');
+  if(!wrap) return;
+  wrap.innerHTML=classes.map(c=>
+    `<button type="button" class="btn" style="padding:6px 10px;font-size:12px" onclick="correctPrediction('${c}')">${c}</button>`
+  ).join('');
+}
+function enableCorrection(d){
+  const box=document.getElementById('correctBox');
+  if(!box) return;
+  box.classList.remove('disabled');
+  if(d&&d.classes) buildClassButtons(d.classes);
+  window._lastPred=(d&&d.prediction)?d.prediction:null;
+  const msg=document.getElementById('learnMsg');
+  if(msg) msg.textContent='';
+}
+async function sendCorrection(trueLabel){
+  const inp=window._lastInput;
+  if(!inp){Aegis.toast('Make a prediction first',true);return}
+  const msg=document.getElementById('learnMsg');
+  if(msg) msg.textContent='Sending to RL agent…';
+  try{
+    const r=await fetch('/rl_learn',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        features:inp.features,
+        true_label:trueLabel,
+        predicted:window._lastPred,
+        mark_new: !!document.getElementById('saveAsNewChk')?.checked
+      })});
+    const res=await r.json();
+    if(res.error){if(msg) msg.textContent='Error: '+res.error;return}
+    if(msg){
+      msg.innerHTML=res.msg+(res.updated
+        ?' <span style="color:var(--accent)">(learned)</span>'
+        :' <span style="color:var(--muted)">(learning is OFF)</span>');
+    }
+    refreshLearnStatus();
+    let learn_status={};
+    try{ learn_status=await (await fetch('/rl_learn_status')).json(); }catch(e){}
+    Aegis.askLlm({
+      mode:'learn',
+      true_label:trueLabel,
+      predicted:window._lastPred,
+      updated:!!res.updated,
+      learn_status
+    });
+    if(res.updated){
+      Aegis.toast('Local RL updated — rerunning live serve');
+      await predictText();
+    }
+  }catch(e){if(msg) msg.textContent='Request failed: '+e}
+}
+function confirmPrediction(){
+  const p=window._lastPred;
+  if(!p){Aegis.toast('No prediction to confirm',true);return}
+  sendCorrection(p);
+}
+function correctPrediction(cls){sendCorrection(cls)}
+
+async function init(){
+  const info=await Aegis.fetchInfo();
+  bestModel=info.best_model||'XGBoost';
+  document.getElementById('bestLabel').textContent=bestModel;
+  document.getElementById('nFeatLabel').textContent=info.n_features;
+  document.getElementById('featTotal').textContent=info.n_features;
+  featureCols=info.feature_columns||[];
+  document.getElementById('featList').innerHTML=featureCols.map((c,i)=>`<div>${i+1}. ${c}</div>`).join('');
+  updateFeatCount();
+  document.getElementById('liveChip').textContent='Predict ready';
+  buildClassButtons(info.class_names||[]);
+  refreshLearnStatus();
+  refreshRlflStatus();
+  paintReadyStrip(info);
+  try{
+    window._lastLive=await Aegis.fetchLive();
+    Aegis.renderVerifyPanel(window._lastLive);
+  }catch(e){}
+}
+function paintReadyStrip(info){
+  const x=document.getElementById('readyXgb');
+  const r=document.getElementById('readyRl');
+  const f=document.getElementById('readyFl');
+  const l=document.getElementById('readyLlm');
+  if(x) x.textContent='XGBoost: '+(info.best_available===false?'missing':'ready');
+  if(r) r.textContent='Local RL: '+(info.rl_count||(info.rl_agents||[]).length||0)+'/5';
+  if(f) f.textContent='Federated RL: '+(info.fl_is_rl_fl?'GLOBAL ready':(info.fl_loaded?'legacy':'missing'));
+  if(l) l.textContent='Groq LLM: '+(info.llm_available?'ready':'no key');
+}
+
+let advisorHistory = [];
+
+function updateAdvisorContext(prediction, confidence){
+  const tag = document.getElementById('advisorThreatTag');
+  if(tag){
+    tag.textContent = prediction ? 'Incident: ' + prediction + ' (' + (confidence*100).toFixed(1) + '%)' : 'Incident: Ready for analysis';
+    tag.style.borderColor = Aegis.THREAT[prediction]?.color || 'var(--border)';
+    tag.style.color = Aegis.THREAT[prediction]?.color || 'var(--text)';
+  }
+}
+
+function appendChatMsg(role, text){
+  const win = document.getElementById('advisorChatWindow');
+  if(!win) return;
+  const isUser = role === 'user';
+  const msgEl = document.createElement('div');
+  msgEl.className = 'chat-msg ' + (isUser ? 'user' : 'assistant');
+  
+  const authorEl = document.createElement('div');
+  authorEl.className = 'chat-bubble-author';
+  authorEl.innerHTML = isUser ? '👤 OPERATOR' : '<span class="hb on"></span> P.R.I.S.M AI SECURITY ADVISOR';
+  
+  const contentEl = document.createElement('div');
+  contentEl.className = 'chat-bubble-content';
+  contentEl.innerHTML = isUser ? '<p>' + text.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</p>' : Aegis.formatLlmText(text);
+  
+  msgEl.appendChild(authorEl);
+  msgEl.appendChild(contentEl);
+  win.appendChild(msgEl);
+  win.scrollTop = win.scrollHeight;
+}
+
+async function sendAdvisorChat(customText){
+  const input = document.getElementById('advisorInput');
+  const text = (customText || (input ? input.value : '')).trim();
+  if(!text) return;
+  
+  if(input && !customText) input.value = '';
+  
+  appendChatMsg('user', text);
+  advisorHistory.push({ role: 'user', content: text });
+  
+  const win = document.getElementById('advisorChatWindow');
+  const loaderEl = document.createElement('div');
+  loaderEl.id = 'advisorTyping';
+  loaderEl.className = 'chat-msg assistant';
+  loaderEl.innerHTML = '<div class="chat-bubble-author"><span class="hb on"></span> P.R.I.S.M AI SECURITY ADVISOR</div><div class="chat-bubble-content" style="color:var(--muted)">Analyzing incident response playbook…</div>';
+  win.appendChild(loaderEl);
+  win.scrollTop = win.scrollHeight;
+  
+  const sendBtn = document.getElementById('advisorSendBtn');
+  if(sendBtn) sendBtn.disabled = true;
+  
+  try {
+    const payload = {
+      messages: advisorHistory,
+      context: {
+        prediction: window._lastPrediction || 'Benign',
+        confidence: window._lastConfidence || 0.95,
+        model: 'XGBoost',
+        rl_action: window._lastRlAction,
+        fl_action: window._lastFlAction,
+      }
+    };
+    
+    const r = await fetch('/chat_advisor', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const d = await r.json();
+    
+    if(loaderEl.parentNode) loaderEl.parentNode.removeChild(loaderEl);
+    
+    const reply = d.response || d.explanation || 'Unable to generate response.';
+    appendChatMsg('assistant', reply);
+    advisorHistory.push({ role: 'assistant', content: reply });
+  } catch (err) {
+    if(loaderEl.parentNode) loaderEl.parentNode.removeChild(loaderEl);
+    appendChatMsg('assistant', '⚠️ Advisory service error: ' + err.message);
+  } finally {
+    if(sendBtn) sendBtn.disabled = false;
+  }
+}
+
+function askQuickPrompt(text){
+  sendAdvisorChat(text);
+}
+
+function handleAdvisorKey(e){
+  if(e.key === 'Enter' && !e.shiftKey){
+    e.preventDefault();
+    sendAdvisorChat();
+  }
+}
+
+function clearAdvisorChat(){
+  advisorHistory = [];
+  const win = document.getElementById('advisorChatWindow');
+  if(win){
+    win.innerHTML = `
+      <div class="chat-msg assistant">
+        <div class="chat-bubble-author"><span class="hb on"></span> P.R.I.S.M AI SECURITY ADVISOR</div>
+        <div class="chat-bubble-content">
+          <p>Conversation cleared. Ask any new question regarding incident response, containment, or enterprise guidelines.</p>
+        </div>
+      </div>
+    `;
+  }
+}
+
+init();
+setInterval(async ()=>{
+  try{
+    window._lastLive=await Aegis.fetchLive();
+    Aegis.renderVerifyPanel(window._lastLive);
+    refreshLearnStatus();
+    refreshRlflStatus();
+  }catch(e){}
+}, 4000);
+</script>
+{% endblock %}

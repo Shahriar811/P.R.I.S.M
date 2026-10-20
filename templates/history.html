@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}History — P.R.I.S.M{% endblock %}
+{% block content %}
+<section class="page-hero">
+  <div class="badge"><span class="dot"></span> Browser history</div>
+  <h1>Prediction history</h1>
+  <p>Recent predictions stored locally in your browser. Click <strong>Explain</strong> for a Groq recap of any entry.</p>
+</section>
+
+<div class="card">
+  <h2><span class="icon">HX</span> Recent entries</h2>
+  <div class="btn-row" style="margin-top:0;margin-bottom:12px">
+    <button class="btn" onclick="render()">Refresh</button>
+    <button class="btn" onclick="wipe()">Clear history</button>
+    <a class="btn btn-primary" href="{{ url_for('predict_page') }}">New prediction</a>
+  </div>
+  <div id="history"><p style="color:var(--muted)">No predictions yet.</p></div>
+</div>
+
+<div class="card" style="margin-top:16px">
+  <h2><span class="icon">AI</span> History explanation (Groq)</h2>
+  <div class="llm-box">
+    <div class="llm-head">
+      <h3>Selected entry</h3>
+    </div>
+    <div class="llm-body" id="llmText">Pick an entry and click Explain.</div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function render(){
+  const h=Aegis.getHistory();
+  const el=document.getElementById('history');
+  if(!h.length){el.innerHTML='<p style="color:var(--muted)">No predictions yet.</p>';return}
+  el.innerHTML=h.map((item,i)=>`
+    <div class="hist-item">
+      <div>
+        <span style="font-weight:700;color:${Aegis.THREAT[item.pred]?.color||'var(--text)'}">${item.pred}</span>
+        <span style="color:var(--muted);margin-left:8px">${(+item.conf).toFixed(1)}%</span>
+        <div style="font-size:14px;color:var(--muted);margin-top:2px">RL:${item.rl||'—'} · FL:${item.fl||'—'}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:14px;color:var(--muted)">${item.model||''}</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:6px">${item.time||''}</div>
+        <button class="btn" style="padding:6px 10px;font-size:9px" onclick='explainHist(${i})'>Explain</button>
+      </div>
+    </div>`).join('');
+  document.getElementById('liveChip').textContent=h.length+' saved';
+}
+function explainHist(i){
+  const item=Aegis.getHistory()[i];
+  if(!item) return;
+  Aegis.askLlm({mode:'history', item});
+}
+function wipe(){
+  Aegis.clearHistory();
+  Aegis.toast('History cleared');
+  render();
+}
+render();
+</script>
+{% endblock %}

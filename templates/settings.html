@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Settings — P.R.I.S.M{% endblock %}
+{% block content %}
+<section class="page-hero">
+  <div class="badge"><span class="dot"></span> Preferences</div>
+  <h1>Settings</h1>
+  <p>Theme and alerts apply across every page. Changes are saved in your browser.</p>
+</section>
+
+<div class="grid">
+  <div class="card">
+    <h2><span class="icon">TH</span> Day / Night theme</h2>
+    <div class="setting-help">Day is cream retro P.R.I.S.M; Night is teal CRT. Same layout and controls either way.</div>
+    <div class="theme-preview">
+      <div class="theme-opt day" id="optDay" onclick="setTheme('day')">
+        <div class="theme-label">Day</div>
+        Cream · hard shadows · Netscape bar
+      </div>
+      <div class="theme-opt night" id="optNight" onclick="setTheme('night')">
+        <div class="theme-label">Night</div>
+        Dark CRT · teal glow
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="toggleTheme()">Toggle day/night</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><span class="icon">AL</span> Alerts &amp; history</h2>
+    <div class="setting-block">
+      <h3>Alert threshold</h3>
+      <div class="setting-help">Minimum confidence to raise an ALERT on attack classes.</div>
+      <div class="opt-row">
+        <input type="range" id="threshold" min="50" max="99" value="75" oninput="onThresh(this.value)">
+        <strong id="threshVal">75%</strong>
+      </div>
+    </div>
+    <div class="setting-block">
+      <h3>Sound alert on attack</h3>
+      <div class="opt-row">
+        <span>Enabled</span>
+        <label class="toggle"><input type="checkbox" id="soundAlert" onchange="onSound(this.checked)"><span class="slider"></span></label>
+      </div>
+      <button class="btn" style="margin-top:8px" onclick="Aegis.unlockAudio();Aegis.playAlertSound(true)">Test sound</button>
+    </div>
+    <div class="setting-block">
+      <h3>Save prediction history</h3>
+      <div class="opt-row">
+        <span>Enabled</span>
+        <label class="toggle"><input type="checkbox" id="saveHist" onchange="onHist(this.checked)"><span class="slider"></span></label>
+      </div>
+      <button class="btn" style="margin-top:8px" onclick="Aegis.clearHistory();Aegis.toast('History cleared')">Clear saved history</button>
+    </div>
+  </div>
+</div>
+
+<div class="card full" style="margin-top:16px">
+  <h2><span class="icon">👤</span> Portal Access Role</h2>
+  <div class="setting-help">Switch between Administrator console (full access to FL, RL, topologies) and Standard User interface (streamlined predictions &amp; AI Advisor).</div>
+  <div class="btn-row">
+    <button type="button" class="btn" id="btnRoleAdmin" onclick="Aegis.setRole('admin');syncUI()">👑 Administrator</button>
+    <button type="button" class="btn" id="btnRoleUser" onclick="Aegis.setRole('user');syncUI()">👤 Standard User</button>
+  </div>
+</div>
+
+<div class="card" style="margin-top:16px">
+  <h2><span class="icon">→</span> Jump to</h2>
+  <div class="btn-row">
+    <a class="btn" href="{{ url_for('home') }}">Home</a>
+    <a class="btn" href="{{ url_for('predict_page') }}">Predict</a>
+    <a class="btn" href="{{ url_for('advisor_page') }}">AI Advisor</a>
+    <a class="btn" href="{{ url_for('fl_page') }}">FL</a>
+    <a class="btn" href="{{ url_for('rl_page') }}">RL</a>
+    <a class="btn" href="{{ url_for('history_page') }}">History</a>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function syncUI(){
+  const s=Aegis.loadSettings();
+  const r=Aegis.getRole()||'admin';
+  document.getElementById('optDay').classList.toggle('active', s.theme!=='night');
+  document.getElementById('optNight').classList.toggle('active', s.theme==='night');
+  document.getElementById('threshold').value=s.alertThreshold;
+  document.getElementById('threshVal').textContent=s.alertThreshold+'%';
+  document.getElementById('soundAlert').checked=!!s.soundAlert;
+  document.getElementById('saveHist').checked=!!s.saveHist;
+  document.getElementById('btnRoleAdmin').classList.toggle('btn-primary', r==='admin');
+  document.getElementById('btnRoleUser').classList.toggle('btn-primary', r==='user');
+  document.getElementById('liveChip').textContent='Settings';
+}
+function setTheme(theme){
+  Aegis.saveSettings({theme});
+  syncUI();
+  Aegis.toast(theme==='night'?'Night mode on':'Day mode on');
+}
+function toggleTheme(){
+  const cur=Aegis.loadSettings().theme;
+  setTheme(cur==='night'?'day':'night');
+}
+function onThresh(v){
+  document.getElementById('threshVal').textContent=v+'%';
+  Aegis.saveSettings({alertThreshold:+v});
+}
+function onSound(v){
+  Aegis.saveSettings({soundAlert:!!v});
+  if(v){Aegis.unlockAudio();Aegis.toast('Sound enabled');}
+}
+function onHist(v){Aegis.saveSettings({saveHist:!!v});}
+syncUI();
+</script>
+{% endblock %}

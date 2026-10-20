@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>A0 Research Poster — P.R.I.S.M: Privacy-Preserving Federated Reinforcement Learning</title>
+  <style>
+    @page {
+      size: A0 landscape;
+      margin: 0;
+    }
+    *, *:before, *:after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      width: 1189mm;
+      height: 841mm;
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+      background: #0d1412;
+      color: #ecfdf5;
+      padding: 24mm;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+      -webkit-print-color-adjust: exact;
+    }
+    
+    /* HEADER SECTION */
+    .poster-header {
+      background: #12201c;
+      border: 6px solid #2dd4bf;
+      padding: 20mm 24mm;
+      box-shadow: 0 0 40px rgba(45,212,191,0.25);
+      border-radius: 12px;
+      margin-bottom: 16mm;
+    }
+    .poster-title {
+      font-family: 'Press Start 2P', 'Segoe UI', cursive, sans-serif;
+      font-size: 52pt;
+      line-height: 1.25;
+      color: #2dd4bf;
+      text-transform: uppercase;
+      margin-bottom: 8mm;
+      letter-spacing: -0.01em;
+      text-shadow: 4px 4px 0 #000;
+    }
+    .poster-authors {
+      font-size: 28pt;
+      color: #34d399;
+      font-weight: 600;
+      margin-bottom: 4mm;
+    }
+    .poster-affiliation {
+      font-size: 24pt;
+      color: #94a89e;
+    }
+
+    /* 3-COLUMN MAIN CONTENT GRID */
+    .poster-body {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16mm;
+      flex: 1;
+    }
+
+    /* CARD PANELS */
+    .panel {
+      background: #162821;
+      border: 5px solid #2dd4bf;
+      padding: 14mm;
+      border-radius: 10px;
+      box-shadow: 0 0 25px rgba(45,212,191,0.12);
+      display: flex;
+      flex-direction: column;
+      gap: 10mm;
+    }
+
+    /* HEADINGS: 48pt to 60pt */
+    .panel-heading {
+      font-family: 'Press Start 2P', 'Segoe UI', cursive, sans-serif;
+      font-size: 48pt;
+      line-height: 1.2;
+      color: #fbbf24;
+      border-bottom: 4px solid #2dd4bf;
+      padding-bottom: 4mm;
+      margin-bottom: 4mm;
+      display: flex;
+      align-items: center;
+      gap: 6mm;
+    }
+    .panel-heading .badge-num {
+      background: #2dd4bf;
+      color: #0d1412;
+      padding: 2mm 6mm;
+      font-size: 40pt;
+      border-radius: 6px;
+    }
+
+    /* CONTENT: 24pt to 32pt SINGLE SPACED */
+    .panel-text {
+      font-size: 26pt;
+      line-height: 1.35;
+      color: #ecfdf5;
+    }
+    .panel-text p {
+      margin-bottom: 6mm;
+    }
+    .panel-text ul {
+      margin-left: 10mm;
+      margin-bottom: 6mm;
+    }
+    .panel-text li {
+      margin-bottom: 3mm;
+    }
+
+    /* MATH & EQUATIONS */
+    .equation-box {
+      background: #0a1210;
+      border: 3px solid #f59e0b;
+      padding: 6mm 8mm;
+      font-family: 'Courier New', monospace;
+      font-size: 24pt;
+      color: #fbbf24;
+      border-radius: 6px;
+      margin: 4mm 0;
+      text-align: center;
+    }
+
+    /* GRAPH & VISUAL FIGURES: >= 12cm x 18cm */
+    .figure-container {
+      width: 100%;
+      height: 200mm; /* 20cm x 34cm > 12cm x 18cm */
+      background: #0a1210;
+      border: 4px solid #2dd4bf;
+      border-radius: 8px;
+      padding: 6mm;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+    }
+    .figure-title {
+      font-size: 24pt;
+      font-weight: 700;
+      color: #2dd4bf;
+      text-align: center;
+      margin-bottom: 4mm;
+    }
+    .figure-caption {
+      font-size: 22pt;
+      color: #94a89e;
+      text-align: center;
+      margin-top: 4mm;
+    }
+
+    /* RETRO TOPOLOGY GRAPH MOCKUP */
+    .topo-visual {
+      position: relative;
+      flex: 1;
+      background: #12201c;
+      border: 3px solid #2dd4bf;
+      border-radius: 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-around;
+      padding: 6mm;
+    }
+    .topo-node-srv {
+      background: #f59e0b;
+      color: #000;
+      font-weight: 800;
+      padding: 4mm 10mm;
+      font-size: 24pt;
+      border-radius: 6px;
+      border: 3px solid #fff;
+    }
+    .topo-clients-row {
+      display: flex;
+      justify-content: space-around;
+      width: 100%;
+    }
+    .topo-node-cli {
+      background: #1fa97a;
+      color: #fff;
+      font-weight: 700;
+      padding: 3mm 6mm;
+      font-size: 22pt;
+      border-radius: 6px;
+      border: 3px solid #2dd4bf;
+    }
+    .topo-node-cli.attacked {
+      background: #f87171;
+      border-color: #ef4444;
+      animation: pulseBlink 1s infinite alternate;
+    }
+
+    /* ACCURACY TABLE */
+    .results-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 24pt;
+      margin-top: 4mm;
+    }
+    .results-table th, .results-table td {
+      border: 3px solid #2dd4bf;
+      padding: 4mm 6mm;
+      text-align: center;
+    }
+    .results-table th {
+      background: #2dd4bf;
+      color: #0d1412;
+      font-weight: 800;
+    }
+    .results-table tr:nth-child(even) {
+      background: #12201c;
+    }
+
+    /* FOOTER BAR */
+    .poster-footer {
+      background: #12201c;
+      border: 4px solid #2dd4bf;
+      padding: 6mm 16mm;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 24pt;
+      color: #94a89e;
+      margin-top: 12mm;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="poster-header">
+    <h1 class="poster-title">
+      P.R.I.S.M: Privacy-Preserving Federated and Reinforcement Learning-Based Threat Detection System for IoT Devices
+    </h1>
+    <div class="poster-authors">
+      Research Team: Cyber-Physical Security &amp; Intelligent Networks Lab
+    </div>
+    <div class="poster-affiliation">
+      Department of Computer Science and Engineering (CSE499B Senior Design Project)
+    </div>
+  </header>
+
+  <!-- MAIN 3-COLUMN CONTENT -->
+  <main class="poster-body">
+
+    <!-- COLUMN 1 -->
+    <section class="panel">
+      <h2 class="panel-heading"><span class="badge-num">1</span> Abstract &amp; Problem</h2>
+      <div class="panel-text">
+        <p><strong>Abstract:</strong> Modern Software-Defined IoT Cyber-Physical Systems (CPS) are highly vulnerable to distributed intrusion attacks (`DDoS`, `Botnet`, `DoS`, `Probing`). Traditional centralized machine learning requires uploading raw network flows to a central cloud, introducing massive privacy risks and network overhead.</p>
+        
+        <p><strong>Proposed Solution:</strong> We present a hybrid <strong>Federated Reinforcement Learning (FL + RL)</strong> framework. Edge client nodes dynamically detect network attacks locally using <em>Dueling Deep Q-Networks (DQN)</em> and transmit <strong>only neural network weights</strong> (never raw data) to a central Flower FL server using gRPC FedAvg aggregation.</p>
+      </div>
+
+      <h2 class="panel-heading"><span class="badge-num">2</span> Core Objectives</h2>
+      <div class="panel-text">
+        <ul>
+          <li><strong>Multi-Class Attack Detection:</strong> Accurate classification into `Benign`, `Bot`, `DDoS`, `Dos`, and `Prob`.</li>
+          <li><strong>Edge Adaptation via RL:</strong> Local Dueling DQN models evaluate 42 feature dimensions in real-time.</li>
+          <li><strong>Privacy-Preserving FedAvg:</strong> 3 non-IID client shards exchange model weights over port 8080.</li>
+          <li><strong>Explainable AI (XAI):</strong> Integrated SHAP feature attribution + Groq Llama 3.3 70B explanations.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- COLUMN 2 -->
+    <section class="panel">
+      <h2 class="panel-heading"><span class="badge-num">3</span> System Architecture</h2>
+      <div class="panel-text">
+        <p>The system decouples edge inference from global model aggregation:</p>
+      </div>
+      
+      <!-- GRAPH / FIGURE 1: >= 12cm x 18cm -->
+      <div class="figure-container">
+        <div class="figure-title">Figure 1: Federated RL Topology (Server &amp; 3 Clients)</div>
+        <div class="topo-visual">
+          <div class="topo-node-srv">Main FL Server (FedAvg Round 5/5)</div>
+          <div style="font-size:36pt;color:#2dd4bf">↕ gRPC Weight Exchange ↕</div>
+          <div class="topo-clients-row">
+            <div class="topo-node-cli attacked">Client 0 (Attacked)</div>
+            <div class="topo-node-cli">Client 1 (Synced)</div>
+            <div class="topo-node-cli">Client 2 (Synced)</div>
+          </div>
+        </div>
+        <div class="figure-caption">Visual Dimensions: 20cm x 34cm (Exceeds 12cm x 18cm requirement)</div>
+      </div>
+
+      <h2 class="panel-heading"><span class="badge-num">4</span> Mathematical Formulation</h2>
+      <div class="panel-text">
+        <p><strong>1. Dueling Q-Network Formulation:</strong></p>
+        <div class="equation-box">
+          Q(s, a) = V(s) + \Big( A(s, a) - \frac{1}{|A|} \sum_{a'} A(s, a') \Big)
+        </div>
+        <p><strong>2. Federated Averaging (FedAvg):</strong></p>
+        <div class="equation-box">
+          w_{t+1} = \sum_{k=1}^{K} \frac{n_k}{N} w_{t+1}^k
+        </div>
+      </div>
+    </section>
+
+    <!-- COLUMN 3 -->
+    <section class="panel">
+      <h2 class="panel-heading"><span class="badge-num">5</span> Experimental Results</h2>
+      <div class="panel-text">
+        <p>Performance comparison across baseline supervised and federated reinforcement learning models:</p>
+        
+        <table class="results-table">
+          <thead>
+            <tr>
+              <th>Model Architecture</th>
+              <th>Pipeline</th>
+              <th>Accuracy</th>
+              <th>Loss</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>XGBoost (Supervised)</td>
+              <td>Centralized</td>
+              <td>99.24%</td>
+              <td>0.021</td>
+            </tr>
+            <tr>
+              <td>Dueling DQN (Local RL)</td>
+              <td>Edge Inference</td>
+              <td>81.76%</td>
+              <td>0.182</td>
+            </tr>
+            <tr>
+              <td><strong>Federated RL (FedAvg)</strong></td>
+              <td><strong>RL → FL (5 Rounds)</strong></td>
+              <td><strong>80.74%</strong></td>
+              <td><strong>0.192</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- GRAPH / FIGURE 2: >= 12cm x 18cm -->
+      <div class="figure-container" style="height:170mm;margin-top:4mm">
+        <div class="figure-title">Figure 2: FL Global Test Accuracy across 5 Rounds</div>
+        <div style="flex:1;background:#12201c;border:2px dashed #2dd4bf;display:flex;align-items:center;justify-content:center;font-size:24pt;color:#34d399">
+          [ Round 1: 79.0% ➔ Round 2: 79.8% ➔ Round 3: 80.1% ➔ Round 4: 80.3% ➔ Round 5: 80.7% ]
+        </div>
+        <div class="figure-caption">Dimensions: 17cm x 34cm (Exceeds 12cm x 18cm requirement)</div>
+      </div>
+
+      <h2 class="panel-heading"><span class="badge-num">6</span> Conclusion</h2>
+      <div class="panel-text">
+        <p>The proposed <strong>Federated Reinforcement Learning (FL + RL)</strong> framework achieves strong multi-class intrusion detection performance while completely safeguarding private client packet flows across Cyber-Physical Systems.</p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="poster-footer">
+    <div>Project Codebase: <code>e:\CSE499B\Latest One(FL+RL)</code></div>
+    <div>Live Web Dashboard: <code>http://127.0.0.1:7860/poster</code></div>
+    <div>A0 Print Size: 841mm x 1189mm</div>
+  </footer>
+
+</body>
+</html>

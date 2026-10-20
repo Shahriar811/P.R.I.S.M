@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Classes — P.R.I.S.M{% endblock %}
+{% block content %}
+<section class="page-hero">
+  <div class="badge"><span class="dot"></span> Label reference</div>
+  <h1>Attack class reference</h1>
+  <p>These are the five threat classes used by XGBoost, FL global model, and RL agents. Click a class for a Groq explainer.</p>
+</section>
+
+<div class="card">
+  <h2><span class="icon">CL</span> Classes</h2>
+  <div class="legend-grid" id="legendGrid"></div>
+  <div class="btn-row">
+    <a class="btn btn-primary" href="{{ url_for('predict_page') }}">Predict a flow</a>
+    <a class="btn" href="{{ url_for('home') }}">Back home</a>
+  </div>
+</div>
+
+<div class="card" style="margin-top:16px">
+  <h2><span class="icon">AI</span> Class explainer (Groq)</h2>
+  <div class="llm-box">
+    <div class="llm-head">
+      <h3 id="classTitle">Pick a class</h3>
+    </div>
+    <div class="llm-body" id="llmText">Click Explain on any class above.</div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+async function init(){
+  const info=await Aegis.fetchInfo();
+  const classes=info.class_names||Object.keys(Aegis.THREAT);
+  document.getElementById('legendGrid').innerHTML=classes.map(c=>{
+    const t=Aegis.THREAT[c]||{color:'#5c514b',desc:'Unknown'};
+    return `<div class="legend-item" style="flex-direction:column;align-items:stretch;gap:8px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="legend-dot" style="background:${t.color}"></div>
+        <div><strong>${c}</strong><div style="color:var(--muted);font-size:14px">${t.desc}</div></div>
+      </div>
+      <button class="btn" style="padding:6px 10px;font-size:9px" onclick='explainClass(${JSON.stringify(c)}, ${JSON.stringify(t.desc)})'>Explain</button>
+    </div>`;
+  }).join('');
+  document.getElementById('liveChip').textContent=classes.length+' classes';
+}
+function explainClass(label, desc){
+  document.getElementById('classTitle').textContent=label;
+  Aegis.askLlm({mode:'class', label, desc});
+}
+init();
+</script>
+{% endblock %}

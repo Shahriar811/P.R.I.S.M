@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Home — P.R.I.S.M{% endblock %}
+{% block content %}
+<section class="page-hero">
+  <h1>P.R.I.S.M Security Platform</h1>
+
+  <div class="stats-bar admin-only">
+    <div class="stat-chip">Device: <span class="val" id="statDevice">—</span></div>
+    <div class="stat-chip">Features: <span class="val" id="statFeatures">—</span></div>
+    <div class="stat-chip">Predictor: <span class="val" id="statBest">—</span></div>
+    <div class="stat-chip">FL processes: <span class="val" id="statFl">—</span></div>
+    <div class="stat-chip">RL agents: <span class="val" id="statRl">—</span></div>
+    <div class="stat-chip">RL→FL: <span class="val" id="statFlRl">—</span></div>
+  </div>
+</section>
+
+<div class="grid-3">
+  <a class="tile-link" href="{{ url_for('predict_page') }}">
+    <div class="t-ico">PR</div>
+    <h3>Predict</h3>
+    <p>Classify a flow with XGBoost and compare RL + FL answers side by side.</p>
+  </a>
+  <a class="tile-link" href="{{ url_for('fl_page') }}">
+    <div class="t-ico">FL</div>
+    <h3>Federated FL</h3>
+    <p>Watch the Flower server and 3 client processes update live.</p>
+  </a>
+  <a class="tile-link" href="{{ url_for('rl_page') }}">
+    <div class="t-ico">RL</div>
+    <h3>RL Agents</h3>
+    <p>See which of the 5 PyTorch classifiers are loaded and their last actions.</p>
+  </a>
+  <a class="tile-link" href="{{ url_for('advisor_page') }}">
+    <div class="t-ico">AI</div>
+    <h3>AI Advisor</h3>
+    <p>Chat with AI Security Advisor for mitigation tips &amp; organizational playbooks.</p>
+  </a>
+  <a class="tile-link" href="{{ url_for('history_page') }}">
+    <div class="t-ico">HX</div>
+    <h3>History</h3>
+    <p>Review recent predictions saved in this browser.</p>
+  </a>
+  <a class="tile-link" href="{{ url_for('about_page') }}">
+    <div class="t-ico">CL</div>
+    <h3>Attack Classes</h3>
+    <p>Reference for Benign, Bot, DDoS, Dos, and Prob labels.</p>
+  </a>
+  <a class="tile-link" href="{{ url_for('settings_page') }}">
+    <div class="t-ico">ST</div>
+    <h3>Settings</h3>
+    <p>Day/Night theme, sound alerts, threshold, and history preferences.</p>
+  </a>
+</div>
+
+<div class="card full" style="margin-top:16px;display:none">
+  <h2><span class="icon">AI</span> System status (Groq)</h2>
+  <div class="btn-row" style="margin-top:0;margin-bottom:10px">
+    <button class="btn btn-primary" onclick="explainStatus()">Explain system status</button>
+  </div>
+  <div class="llm-box">
+    <div class="llm-head">
+      <h3>Plain-language briefing</h3>
+    </div>
+    <div class="llm-body" id="llmText">Click the button for a live status briefing (what is ready, what RL→FL means, next steps).</div>
+  </div>
+</div>
+
+<div class="card full" style="margin-top:16px">
+  <h2><span class="icon">→</span> Quick actions</h2>
+  <div class="btn-row">
+    <a class="btn btn-primary" href="{{ url_for('predict_page') }}">Go to Predict</a>
+    <a class="btn" href="{{ url_for('advisor_page') }}">Open AI Advisor</a>
+    <a class="btn" href="{{ url_for('fl_page') }}">Open FL monitor</a>
+    <a class="btn" href="{{ url_for('rl_page') }}">Open RL monitor</a>
+    <a class="btn" href="{{ url_for('settings_page') }}">Toggle Day/Night</a>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+async function boot(){
+  const [info, live] = await Promise.all([Aegis.fetchInfo(), Aegis.fetchLive()]);
+  document.getElementById('statDevice').textContent = info.device;
+  document.getElementById('statFeatures').textContent = info.n_features;
+  document.getElementById('statBest').textContent = info.best_model || 'XGBoost';
+  document.getElementById('statFl').textContent = Aegis.flProcessSummary(live);
+  document.getElementById('statRl').textContent = (live.reinforcement?.agent_count ?? 0) + '/5';
+  document.getElementById('statFlRl').textContent = live.federated?.is_rl_fl ? 'ON' : 'off';
+  document.getElementById('liveChip').textContent = 'Home live';
+}
+function explainStatus(){ Aegis.askLlm({mode:'status'}); }
+boot();
+setInterval(async ()=>{
+  try{
+    const live = await Aegis.fetchLive();
+    document.getElementById('statFl').textContent = Aegis.flProcessSummary(live);
+    document.getElementById('statRl').textContent = (live.reinforcement?.agent_count ?? 0) + '/5';
+    document.getElementById('statFlRl').textContent = live.federated?.is_rl_fl ? 'ON' : 'off';
+  }catch(e){}
+}, 4000);
+</script>
+{% endblock %}
